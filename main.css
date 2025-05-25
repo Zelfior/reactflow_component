@@ -1,0 +1,12 @@
+/* this gets exported as style.css and can be used for the default theming */
+/* @import 'styles/init.css';
+@import 'styles/style.css';
+@import 'styles/node-resizer.css'; */
+
+.react-flow__edge-textbg {
+  fill: var(--xy-edge-label-background-color, var(--xy-edge-label-background-color-default));
+}
+
+.react-flow__edge-text {
+  fill: var(--xy-edge-label-color, var(--xy-edge-label-color-default));
+}
