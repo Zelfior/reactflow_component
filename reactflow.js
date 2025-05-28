@@ -11,13 +11,16 @@ import {
     useNodesState,
     useEdgesState,
     addEdge,
+    useStore,
+    ReactFlowProvider,
+    
 } from 'reactflow';
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useLayoutEffect  } from 'react';
 import { Handle, Position, useReactFlow, type NodeProps, type Node } from 'reactflow';
 
 const handleStyle = { left: 10 };
- 
+
 function TextNode({ id, data }: NodeProps<Node<{ text: string }>>) {
   const { updateNodeData } = useReactFlow;
  
@@ -56,19 +59,71 @@ const nodeTypes = {
 };
 
 const initialNodes = [
-    { 
-        id: 'node-1',
-        type: 'textUpdater',
-        position: { x: 0, y: 0 },
-        data: { text: '' }, 
+    {
+        id: "1",
+        position: {"x": 180, "y": 5},
+        data: {"label": "Incoming"},
     },
-    { id: '2', 
-        position: { x: 0, y: 100 }, 
-    data: { label: '2' } },
+    {
+        id: "2",
+        position: {"x": 180, "y": 65},
+        data: {"label": "feature"},
+    },
+    {
+        id: "3",
+        position: {"x": 100, "y": 125},
+        data: {"label": "to"},
+    },
+    {
+        id: "4",
+        position: {"x": 270, "y": 125},
+        data: {"label": "parametrize"},
+    },
+    {
+        id: "5",
+        position: {"x": 180, "y": 185},
+        data: {"label": "plots"},
+    }
 ];
-const initialEdges = [{ id: 'e1-2', source: '1', target: '2' , sourceHandle: 'a'}];
+const initialEdges = [{
+        "source": "1",
+        "target": "2",
+        "id": "reactflow__edge-1-2"
+    },
+    {
+        "source": "2",
+        "target": "3",
+        "id": "reactflow__edge-2-3"
+    },
+    {
+        "source": "3",
+        "target": "5",
+        "id": "reactflow__edge-3-5"
+    },
+    {
+        "source": "2",
+        "target": "4",
+        "id": "reactflow__edge-2-4"
+    },
+    {
+        "source": "4",
+        "target": "5",
+        "id": "reactflow__edge-4-5"
+    }];
 
-export function render({ model }) {
+    
+function Flow({model}) {
+    // console.log("Model", model);
+    // console.log("Bbox", model.bbox);
+    // console.log("Bbox", model._bbox);
+    // console.log("Bbox", model.model);
+    // console.log("Bbox", model.s);
+
+    // console.dir(model);
+    // console.log("Dir", console.dir(model));
+
+  // you can access the internal state here
+    const reactFlowInstance = useReactFlow();
     const [py_nodes, py_setNodes] = model.useState("nodes");
     const [py_edges, py_setEdges] = model.useState("edges");
 
@@ -94,23 +149,30 @@ export function render({ model }) {
 
     model.send_msg('updated'); 
 
-    // nodes[0].data = model.get_child("py_component");
-
-    return (
-        <div style={{ width: '100vw', height: '100vh' }}>
-            <ReactFlow
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                onConnect={onConnect}
-                nodeTypes={nodeTypes}
-                fitView
+    return <div style={{ width: '100%', height: '100%' }}
             >
-                <Controls />
-                <MiniMap />
-                <Background variant="dots" gap={12} size={1} />
-            </ReactFlow>
-        </div>
-    );
+                <ReactFlow
+                    nodes={nodes}
+                    edges={edges}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    onConnect={onConnect}
+                    nodeTypes={nodeTypes}
+                    fitView
+                >
+                    {/* <Controls /> */}
+                    <MiniMap />
+                    <Background variant="dots" gap={12} size={1} />
+                </ReactFlow>
+            </div>
+}
+ 
+
+export function render({ model }) {
+    
+    return (
+        <ReactFlowProvider>
+            <Flow model={model} />
+        </ReactFlowProvider>
+        );
 }

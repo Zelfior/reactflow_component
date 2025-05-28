@@ -3,8 +3,7 @@ import os
 from pathlib import Path
 import panel as pn
 
-from panel.custom import ReactComponent, Child
-from panel.layout.gridstack import GridStack
+from panel.custom import ReactComponent
 import param
 # npm install @xyflow/react
 
@@ -31,35 +30,39 @@ class ReactFlow(ReactComponent):
     edges = param.List()
     nodes = param.List()
 
-    py_component = Child()
+    def __init__(self, sizing_mode = "stretch_both", **kwargs):
+        super().__init__(sizing_mode=sizing_mode, **kwargs)
 
     _importmap = {
         "imports": {
             "reactflow": "https://esm.sh/reactflow@11.11.4",
-            "prop-types":"https://unpkg.com/prop-types@15.6/prop-types.js",
-            "usehooks-ts":"https://unpkg.com/usehooks-ts@3.1.1/dist/index.js",
-            "lodash.debounce":"https://unpkg.com/lodash.debounce@4.0.8/index.js"
+            # "prop-types":"https://unpkg.com/prop-types@15.6/prop-types.js",
+            # "usehooks-ts":"https://unpkg.com/usehooks-ts@3.1.1/dist/index.js",
+            # "lodash.debounce":"https://unpkg.com/lodash.debounce@4.0.8/index.js"
         }
     }
     
     _stylesheets = [
                     #   Path(f"{filename}") for filename in glob.glob("*.css")
-                      Path(f"main.css"),
-                      Path(f"init.css"),
-                      Path(f"style.css"),
-                      Path(f"node-resizer.css"),
+                      Path(__file__).parent / Path(f"main.css"),
+                      Path(__file__).parent / Path(f"init.css"),
+                      Path(__file__).parent / Path(f"style.css"),
+                      Path(__file__).parent / Path(f"node-resizer.css"),
                     ]
 
-    _esm = "reactflow.js"
+    _esm = Path(__file__).parent / "reactflow.js"
 
     def _handle_msg(self, data):
-        print(self.edges)
-        print(self.nodes)
-        print()
+        if False:
+            print(self.edges)
+            print(self.nodes)
+            print()
 
     # def _handle_click(self, event):
     #     self.value = event.data
 
-input = pn.widgets.IntInput(name="example", value=15)
-rf = ReactFlow(py_component = pn.panel("A **Markdown** pane!"))
-rf.show()
+if __name__ == "__main__":
+    rf1 = ReactFlow()
+    rf2 = ReactFlow()
+    rf3 = ReactFlow()
+    pn.Row(pn.Column(rf1, rf2), rf3).show()
