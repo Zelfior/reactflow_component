@@ -39,21 +39,6 @@ function TextNode({ id, data }: NodeProps<Node<{ text: string }>>) {
   );
 }
 
-
-let myPythonCodeString = `
-import panel as pn
-pn.extension(sizing_mode="stretch_width")
-
-slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude')
-
-def callback(new):
-    return f'Amplitude is: {new}'
-
-component = pn.Row(slider, pn.bind(callback, slider))
-component.servable(target='my_panel_widget');
-`;
-
-
 const nodeTypes = {
   textUpdater: TextNode,
 };
@@ -61,8 +46,9 @@ const nodeTypes = {
 const initialNodes = [
     {
         id: "1",
-        position: {"x": 180, "y": 5},
+        position: {"x": 161, "y": -13},
         data: {"label": "Incoming"},
+        type:"textUpdater"
     },
     {
         id: "2",
@@ -160,7 +146,7 @@ function Flow({model}) {
                     nodeTypes={nodeTypes}
                     fitView
                 >
-                    {/* <Controls /> */}
+                    <Controls />
                     <MiniMap />
                     <Background variant="dots" gap={12} size={1} />
                 </ReactFlow>

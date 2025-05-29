@@ -24,6 +24,30 @@ import param
 # export * from "/reactflow@11.11.4/es2022/reactflow.mjs";
 # export { default } from "/reactflow@11.11.4/es2022/reactflow.mjs";
 
+text_node_css = """.react-flow__node-textUpdater {
+  padding: 10px;
+  border-radius: 3px;
+  min-width: 150px;
+  font-size: 12px;
+  color: #222;
+  text-align: center;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #1a192b;
+  background-color: white;
+}
+
+}
+.react-flow__node-textUpdater.selectable:hover {
+      box-shadow: 0 1px 4px 1px rgba(0, 0, 0, 0.08);
+}
+.react-flow__node-textUpdater.selectable.selected,
+    .react-flow__node-textUpdater.selectable:focus,
+    .react-flow__node-textUpdater.selectable:focus-visible {
+      box-shadow: 0 0 0 0.5px #1a192b;
+}
+    """
+"""Basic node display that is added to the default style.css"""
 
 class ReactFlow(ReactComponent):
 
@@ -36,18 +60,12 @@ class ReactFlow(ReactComponent):
     _importmap = {
         "imports": {
             "reactflow": "https://esm.sh/reactflow@11.11.4",
-            # "prop-types":"https://unpkg.com/prop-types@15.6/prop-types.js",
-            # "usehooks-ts":"https://unpkg.com/usehooks-ts@3.1.1/dist/index.js",
-            # "lodash.debounce":"https://unpkg.com/lodash.debounce@4.0.8/index.js"
         }
     }
     
     _stylesheets = [
-                    #   Path(f"{filename}") for filename in glob.glob("*.css")
-                      Path(__file__).parent / Path(f"main.css"),
-                      Path(__file__).parent / Path(f"init.css"),
-                      Path(__file__).parent / Path(f"style.css"),
-                      Path(__file__).parent / Path(f"node-resizer.css"),
+                        "https://unpkg.com/reactflow@11.11.4/dist/style.css",
+                        text_node_css
                     ]
 
     _esm = Path(__file__).parent / "reactflow.js"
