@@ -71,10 +71,10 @@ class ReactFlow(ReactComponent):
     _esm = Path(__file__).parent / "reactflow.js"
 
     def _handle_msg(self, data):
-        if False:
-            print(self.edges)
-            print(self.nodes)
-            print()
+        # if False:
+            # print(self.edges)
+            print(data, self.nodes)
+            # print()
 
     # def _handle_click(self, event):
     #     self.value = event.data

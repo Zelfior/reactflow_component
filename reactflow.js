@@ -16,20 +16,42 @@ import {
     
 } from 'reactflow';
 
-import { useCallback, useEffect, useLayoutEffect  } from 'react';
+
+import { useCallback, useEffect, useLayoutEffect, type ChangeEventHandler } from 'react';
 import { Handle, Position, useReactFlow, type NodeProps, type Node } from 'reactflow';
 
 const handleStyle = { left: 10 };
 
-function TextNode({ id, data }: NodeProps<Node<{ text: string }>>) {
-  const { updateNodeData } = useReactFlow;
- 
+
+function TextUpdaterNode({ id, data }) {
+  const { setNodes } = useReactFlow();
+
+  const updateData: ChangeEventHandler<HTMLInputElement> = (evt) => {
+    const inputVal = (evt.target as HTMLInputElement).value;
+
+    setNodes((nodes) =>
+      nodes.map((node) => {
+        if (node.id === id) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              text:inputVal
+            }
+          };
+        }
+
+        return node;
+      })
+    );
+  };
+
   return (
     <div>
-      <div>node {id}</div>
+      <div>Node graph</div>
       <div>
         <input
-        //   onChange={(evt) => updateNodeData(id, { text: evt.target.value })}
+          onChange={updateData}
           value={data.text}
           className="xy-theme__input"
         />
@@ -40,14 +62,14 @@ function TextNode({ id, data }: NodeProps<Node<{ text: string }>>) {
 }
 
 const nodeTypes = {
-  textUpdater: TextNode,
+  textUpdater: TextUpdaterNode,
 };
 
 const initialNodes = [
     {
         id: "1",
         position: {"x": 161, "y": -13},
-        data: {"label": "Incoming"},
+        data: {"text": "Incoming"},
         type:"textUpdater"
     },
     {
@@ -99,15 +121,6 @@ const initialEdges = [{
 
     
 function Flow({model}) {
-    // console.log("Model", model);
-    // console.log("Bbox", model.bbox);
-    // console.log("Bbox", model._bbox);
-    // console.log("Bbox", model.model);
-    // console.log("Bbox", model.s);
-
-    // console.dir(model);
-    // console.log("Dir", console.dir(model));
-
   // you can access the internal state here
     const reactFlowInstance = useReactFlow();
     const [py_nodes, py_setNodes] = model.useState("nodes");
@@ -128,19 +141,35 @@ function Flow({model}) {
     const onConnect = useCallback(
         (params) => {
             setEdges((eds) => addEdge(params, eds));
-            model.send_msg('updated'); 
+            model.send_msg('Connected'); 
         },
         [setEdges],
     );
 
-    model.send_msg('updated'); 
+    const onNodesChangeHandler = (changes) => {
+        onNodesChange(changes);
+
+        let new_nodes = [];
+        changes.forEach(change => {
+            if (Object.hasOwn(change, 'item')){
+                new_nodes.push(change.item);
+                console.log(change.item.data);
+            }
+        });
+        if (new_nodes != []){
+            py_setNodes(new_nodes);
+            model.send_msg('Node Change'); 
+        }
+    };
+
+    // model.send_msg('Usual loop'); 
 
     return <div style={{ width: '100%', height: '100%' }}
             >
                 <ReactFlow
                     nodes={nodes}
                     edges={edges}
-                    onNodesChange={onNodesChange}
+                    onNodesChange={onNodesChangeHandler}
                     onEdgesChange={onEdgesChange}
                     onConnect={onConnect}
                     nodeTypes={nodeTypes}
