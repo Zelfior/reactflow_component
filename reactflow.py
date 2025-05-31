@@ -1,11 +1,9 @@
-import glob
-import os
+
 from pathlib import Path
 import panel as pn
 
 from panel.custom import ReactComponent
 import param
-# npm install @xyflow/react
 
 # reactflow site : https://reactflow.dev/learn
 # reactflow github :https://github.com/xyflow/xyflow/tree/main/packages/react
@@ -24,7 +22,8 @@ import param
 # export * from "/reactflow@11.11.4/es2022/reactflow.mjs";
 # export { default } from "/reactflow@11.11.4/es2022/reactflow.mjs";
 
-text_node_css = """.react-flow__node-textUpdater {
+def make_css(node_name):
+    return """.react-flow__node-{node_name} {
   padding: 10px;
   border-radius: 3px;
   min-width: 150px;
@@ -38,15 +37,15 @@ text_node_css = """.react-flow__node-textUpdater {
 }
 
 }
-.react-flow__node-textUpdater.selectable:hover {
+.react-flow__node-{node_name}.selectable:hover {
       box-shadow: 0 1px 4px 1px rgba(0, 0, 0, 0.08);
 }
-.react-flow__node-textUpdater.selectable.selected,
-    .react-flow__node-textUpdater.selectable:focus,
-    .react-flow__node-textUpdater.selectable:focus-visible {
+.react-flow__node-{node_name}.selectable.selected,
+    .react-flow__node-{node_name}.selectable:focus,
+    .react-flow__node-{node_name}.selectable:focus-visible {
       box-shadow: 0 0 0 0.5px #1a192b;
 }
-    """
+    """.replace("{node_name}", node_name)
 """Basic node display that is added to the default style.css"""
 
 class ReactFlow(ReactComponent):
@@ -60,27 +59,32 @@ class ReactFlow(ReactComponent):
     _importmap = {
         "imports": {
             "reactflow": "https://esm.sh/reactflow@11.11.4",
+            "react-select": "https://esm.sh/react-select@5.10.1",    
         }
     }
     
     _stylesheets = [
                         "https://unpkg.com/reactflow@11.11.4/dist/style.css",
-                        text_node_css
+                        make_css("textUpdater"),
+                        make_css("dropBox"),
                     ]
 
     _esm = Path(__file__).parent / "reactflow.js"
 
     def _handle_msg(self, data):
-        # if False:
-            # print(self.edges)
-            print(data, self.nodes)
-            # print()
+        print("Received message :", data, )
 
-    # def _handle_click(self, event):
-    #     self.value = event.data
+    def print_nodes(self, _):
+        for node in self.nodes:
+                print(node)
+         
 
 if __name__ == "__main__":
     rf1 = ReactFlow()
     rf2 = ReactFlow()
     rf3 = ReactFlow()
+
+    for rf in [rf1, rf2, rf3]:
+         rf.param.watch(rf.print_nodes, "nodes")
+
     pn.Row(pn.Column(rf1, rf2), rf3).show()
