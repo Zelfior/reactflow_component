@@ -105,6 +105,21 @@ function TextUpdaterNode({ id, data, //onMyTrigger
     );
 }
 
+function PanelWidgetNode({ id, data }) {
+    const { setNodes } = useReactFlow();
+    const model = useModel(); // Access the model using the custom hook at the top level
+
+    return (
+        <div>
+            <div>Panel widget</div>
+            <div>
+                {model.get_child("button")}
+            </div>
+            <Handle type="source" position={Position.Bottom} />
+        </div>
+    );
+}
+
 const initialNodes = [
     {
         id: '1',
@@ -121,7 +136,8 @@ const initialNodes = [
     {
         id: '3',
         position: { x: 100, y: 125 },
-        data: { label: 'to' },
+        data: { label: 'panelWidget' },
+        type: 'panelWidget',
     },
     {
         id: '4',
@@ -171,6 +187,7 @@ const initialEdges = [
 const getNodeTypes = (onMyTrigger) => ({
   textUpdater: TextUpdaterNode,// (props) => <TextUpdaterNode {...props} onMyTrigger={onMyTrigger} />,
   dropBox: DropBox,
+  panelWidget: PanelWidgetNode,
 });
 
 function Flow() {

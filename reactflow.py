@@ -2,7 +2,7 @@
 from pathlib import Path
 import panel as pn
 
-from panel.custom import ReactComponent
+from panel.custom import Child, Children, ReactComponent
 import param
 
 # reactflow site : https://reactflow.dev/learn
@@ -53,6 +53,8 @@ class ReactFlow(ReactComponent):
     edges = param.List()
     nodes = param.List()
 
+    button = Child()
+
     def __init__(self, sizing_mode = "stretch_both", **kwargs):
         super().__init__(sizing_mode=sizing_mode, **kwargs)
 
@@ -67,6 +69,7 @@ class ReactFlow(ReactComponent):
                         "https://unpkg.com/reactflow@11.11.4/dist/style.css",
                         make_css("textUpdater"),
                         make_css("dropBox"),
+                        make_css("panelWidget"),
                     ]
 
     _esm = Path(__file__).parent / "reactflow.js"
@@ -80,10 +83,12 @@ class ReactFlow(ReactComponent):
          
 
 if __name__ == "__main__":
-    rf1 = ReactFlow()
-    rf2 = ReactFlow()
-    rf3 = ReactFlow()
+    bt = pn.widgets.Button(name="haha")
+    rf1 = ReactFlow(button=bt)
+    rf2 = ReactFlow(button=bt)
+    rf3 = ReactFlow(button=bt)
 
+    bt.on_click(lambda l: print("haha"))
     for rf in [rf1, rf2, rf3]:
          rf.param.watch(rf.print_nodes, "nodes")
 
