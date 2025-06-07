@@ -189,11 +189,23 @@ function PanelWidgetNode({ id, data }) {
     const { setNodes } = useReactFlow();
     const model = useModel(); // Access the model using the custom hook at the top level
 
+    let children = model.get_child("items");
+    let child;
+
+    const self_num = parseInt(id.replace('dndnode_', ''), 10);
+    children.forEach(element => {
+        const child_num = parseInt(element.key.replace('items', ''), 10);
+        console.log(self_num, child_num);
+        if (self_num == child_num){
+            child = element;
+        }
+    });
+
     return (
         <div>
             <div>Panel widget</div>
             <div>
-                {model.get_child("button")}
+                {child}
             </div>
             <Handle type="source" position={Position.Bottom} />
         </div>
@@ -348,9 +360,6 @@ const DnDFlow = () => {
                 return;
             }
 
-            // project was renamed to screenToFlowPosition
-            // and you don't need to subtract the reactFlowBounds.left/top anymore
-            // details: https://reactflow.dev/whats-new/2023-11-10
             const position = screenToFlowPosition({
                 x: event.clientX,
                 y: event.clientY,
@@ -361,6 +370,8 @@ const DnDFlow = () => {
                 position,
                 data: { label: `${type} node` },
             };
+            
+            model.send_msg("NEW_NODE:"+newNode.id+":"+type.toString());
 
             setNodes((nds) => nds.concat(newNode));
         },

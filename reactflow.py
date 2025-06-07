@@ -1,6 +1,6 @@
 
 from pathlib import Path
-from typing import Any
+from typing import Any, List
 import panel as pn
 
 from panel.custom import Child, Children, ReactComponent, ESMEvent
@@ -50,12 +50,23 @@ def make_css(node_name):
     """.replace("{node_name}", node_name)
 """Basic node display that is added to the default style.css"""
 
+class NodeExample:
+    child:pn.viewable.Viewable = None
+    name = "panelWidget"
+
+    def create(name:str):
+        return pn.layout.Column(pn.pane.Markdown("Drag & drop example"), pn.widgets.FloatInput(value=0.), name=name)
+
+
+
 class ReactFlow(ReactComponent):
 
     edges = param.List()
     nodes = param.List()
 
-    button = Child()
+    items = Children()
+
+    nodes_classes = List[NodeExample]
 
     def __init__(self, sizing_mode = "stretch_both", **kwargs):
         super().__init__(sizing_mode=sizing_mode, **kwargs)
@@ -83,6 +94,19 @@ class ReactFlow(ReactComponent):
          self._send_event(ESMEvent, data=f"{node_name}@{parameter_name}@{parameter_value}")
 
     def _handle_msg(self, data):
+        if data.startswith("NEW_NODE"):
+            _, node_id, node_type = data.split(":")
+
+            new_item = None
+            for c in self.nodes_classes:
+                if c.name == node_type:
+                    print(f"Creating node of type {node_type}")
+                    new_item = c.create(f"{node_id}")
+                    print(new_item)
+                    # new_child = Child(new_item)
+                    
+                    self.items += [new_item]
+                    
         print("Received message :", data, )
 
     def print_nodes(self, _):
@@ -98,15 +122,17 @@ class ReactFlow(ReactComponent):
 
 if __name__ == "__main__":
 
-    bt = pn.widgets.Button(name="pn.widgets.Button")
-    bt.on_click(lambda event:print("Clicked"))
-    col = pn.layout.Column(pn.pane.Markdown("pn.layout.Column example"), bt, pn.widgets.Select(options=["option 1", "option 2"], width=150))
-    rf1 = ReactFlow(button=col)
-    rf2 = ReactFlow(button=col)
-    rf3 = ReactFlow(button=col)
+    def make_reactflow():
+        
+        bt = pn.widgets.Button(name="pn.widgets.Button")
+        bt.on_click(lambda event:print("Clicked"))
+        col = pn.layout.Column(pn.pane.Markdown("pn.layout.Column example"), bt, pn.widgets.Select(options=["option 1", "option 2"], width=150))
 
-    for rf in [rf1, rf2, rf3]:
-         rf.param.watch(rf.print_nodes, "nodes")
+        rf1 = ReactFlow()
+        rf1.nodes_classes=[NodeExample]
+        rf1.param.watch(rf1.print_nodes, "nodes")
 
-    rf1.show()
+        return rf1
+
+    make_reactflow().show()
     # pn.Row(pn.Column(rf1, rf2), rf3).show()
