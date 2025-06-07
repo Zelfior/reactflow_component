@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo } from 'react';
+
 import {
     ReactFlow,
     MiniMap,
@@ -7,11 +7,10 @@ import {
     useNodesState,
     useEdgesState,
     addEdge,
-    useStore,
     ReactFlowProvider,
 } from 'reactflow';
 
-import { useCallback, useEffect, useLayoutEffect } from 'react';
+import { useRef, useCallback, createContext, useContext, useState, useMemo } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
 
 // Create a context for the model
@@ -29,6 +28,87 @@ export const ModelProvider = ({ model, children }) => {
     );
 };
 
+/**
+ * 
+ *  Drag and drop feature
+ * 
+ * 
+ */
+const DnDContext = createContext([null, (_) => { }]);
+
+export const DnDProvider = ({ children }) => {
+    const [type, setType] = useState(null);
+
+    return (
+        <DnDContext.Provider value={[type, setType]}>
+            {children}
+        </DnDContext.Provider>
+    );
+};
+
+export const useDnD = () => {
+    return useContext(DnDContext);
+};
+
+function Sidebar() {
+    const [_, setType] = useDnD();
+
+    const onDragStart = (event, nodeType) => {
+        setType(nodeType);
+        event.dataTransfer.effectAllowed = 'move';
+    };
+
+    return (
+        <aside>
+            <div className="description">
+                {/* You can drag these nodes to the pane on the right. */}
+            </div>
+            <div className="nodes-container">
+                <div
+                    className="dndnode input"
+                    onDragStart={(event) => onDragStart(event, 'textUpdater')}
+                    draggable
+                >
+                    Input Node
+                </div>
+                <div
+                    className="dndnode"
+                    onDragStart={(event) => onDragStart(event, 'dropBox')}
+                    draggable
+                >
+                    Default Node
+                </div>
+                <div
+                    className="dndnode output"
+                    onDragStart={(event) => onDragStart(event, 'panelWidget')}
+                    draggable
+                >
+                    Output Node
+                </div>
+            </div>
+        </aside>
+    );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * 
+ *  Components definition
+ * 
+ * 
+ */
 function DropBox({ id, data }) {
     const { setNodes } = useReactFlow();
 
@@ -65,7 +145,7 @@ function DropBox({ id, data }) {
 }
 
 function TextUpdaterNode({ id, data, //onMyTrigger 
-    }) {
+}) {
     const { setNodes } = useReactFlow();
     // const model = useModel(); // Access the model using the custom hook at the top level
 
@@ -86,7 +166,7 @@ function TextUpdaterNode({ id, data, //onMyTrigger
                 return node;
             })
         );
-        
+
         // onMyTrigger(new_nodes);
     };
 
@@ -120,6 +200,12 @@ function PanelWidgetNode({ id, data }) {
     );
 }
 
+/**
+ * 
+ *  Initial state definition
+ * 
+ * 
+ */
 const initialNodes = [
     {
         id: '1',
@@ -179,10 +265,14 @@ const initialEdges = [
     },
 ];
 
-    // const nodeTypes = {
-    //     textUpdater: TextUpdaterNode,//(props) => <TextUpdaterNode {...props} onMyTrigger={onMyTrigger} />,
-    //     dropBox: DropBox,
-    // };
+
+
+/**
+ * 
+ *  Displayed component definition
+ * 
+ * 
+ */
 
 const getNodeTypes = (onMyTrigger) => ({
   textUpdater: TextUpdaterNode,// (props) => <TextUpdaterNode {...props} onMyTrigger={onMyTrigger} />,
@@ -190,16 +280,19 @@ const getNodeTypes = (onMyTrigger) => ({
   panelWidget: PanelWidgetNode,
 });
 
-function Flow() {
+let id = 0;
+const getId = () => `dndnode_${id++}`;
+
+const DnDFlow = () => {
     const model = useModel();
-    const reactFlowInstance = useReactFlow();
+    const reactFlowWrapper = useRef(null);
+    // const reactFlowInstance = useReactFlow();
     const [py_nodes, py_setNodes] = model.useState('nodes');
     const [py_edges, py_setEdges] = model.useState('edges');
-
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-
-
+    const { screenToFlowPosition } = useReactFlow();
+    const [type] = useDnD();
     if (nodes !== py_nodes) {
         py_setNodes(nodes);
     }
@@ -240,34 +333,78 @@ function Flow() {
         // model.send_msg('Node Change from my trigger');
     }, [model]);
 
-        
+
+    const onDragOver = useCallback((event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+    }, []);
+
+    const onDrop = useCallback(
+        (event) => {
+            event.preventDefault();
+
+            // check if the dropped element is valid
+            if (!type) {
+                return;
+            }
+
+            // project was renamed to screenToFlowPosition
+            // and you don't need to subtract the reactFlowBounds.left/top anymore
+            // details: https://reactflow.dev/whats-new/2023-11-10
+            const position = screenToFlowPosition({
+                x: event.clientX,
+                y: event.clientY,
+            });
+            const newNode = {
+                id: getId(),
+                type,
+                position,
+                data: { label: `${type} node` },
+            };
+
+            setNodes((nds) => nds.concat(newNode));
+        },
+        [screenToFlowPosition, type]
+    );
+
+    const onDragStart = (event, nodeType) => {
+        setType(nodeType);
+        event.dataTransfer.setData('text/plain', nodeType);
+        event.dataTransfer.effectAllowed = 'move';
+    };
+
     const nodeTypes = useMemo(() => getNodeTypes(onMyTrigger), [onMyTrigger]);
-    
     return (
-        <div style={{ width: '100%', height: '100%' }}>
-            <ReactFlow
-                nodes={nodes}
-                edges={edges}
+        <div className="dndflow" style={{ display: 'flex', width: '100%', height: '100%' }}>
+            <div className="reactflow-wrapper" ref={reactFlowWrapper}>
+                <ReactFlow
+                    nodes={nodes}
+                    edges={edges}
                 onNodesChange={onNodesChangeHandler}
-                onEdgesChange={onEdgesChange}
-                onConnect={onConnect}
+                    onEdgesChange={onEdgesChange}
+                    onConnect={onConnect}
                 nodeTypes={nodeTypes}
-                fitView
-            >
-                <Controls />
-                <MiniMap />
-                <Background variant="dots" gap={12} size={1} />
-            </ReactFlow>
+                    onDrop={onDrop}
+                    onDragStart={onDragStart}
+                    onDragOver={onDragOver}
+                    fitView
+                >
+                    <Controls />
+                    <MiniMap />
+                    <Background variant="dots" gap={12} size={1} />
+                </ReactFlow>
+            </div>
+            <Sidebar />
         </div>
     );
-}
+};
 
 export function render({ model }) {
-    return (
-        <ReactFlowProvider>
-            <ModelProvider model={model}>
-                <Flow />
-            </ModelProvider>
-        </ReactFlowProvider>
-    );
-}
+    return (<ReactFlowProvider>
+                <ModelProvider model={model}>
+        <DnDProvider>
+            <DnDFlow />
+        </DnDProvider>
+                    </ModelProvider>
+    </ReactFlowProvider>);
+};

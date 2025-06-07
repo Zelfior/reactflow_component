@@ -1,8 +1,9 @@
 
 from pathlib import Path
+from typing import Any
 import panel as pn
 
-from panel.custom import Child, Children, ReactComponent
+from panel.custom import Child, Children, ReactComponent, ESMEvent
 import param
 
 # reactflow site : https://reactflow.dev/learn
@@ -37,6 +38,7 @@ def make_css(node_name):
 }
 
 }
+
 .react-flow__node-{node_name}.selectable:hover {
       box-shadow: 0 1px 4px 1px rgba(0, 0, 0, 0.08);
 }
@@ -70,26 +72,41 @@ class ReactFlow(ReactComponent):
                         make_css("textUpdater"),
                         make_css("dropBox"),
                         make_css("panelWidget"),
+                        make_css("dndnode"),
+                        make_css("input"),
+                        Path("dnd_flow.css")
                     ]
 
     _esm = Path(__file__).parent / "reactflow.js"
+
+    def update_node_value(self, node_name:str, parameter_name:str, parameter_value:Any):
+         self._send_event(ESMEvent, data=f"{node_name}@{parameter_name}@{parameter_value}")
 
     def _handle_msg(self, data):
         print("Received message :", data, )
 
     def print_nodes(self, _):
+        print("\n\nPrinting nodes")
+        
         for node in self.nodes:
-                print(node)
+            print(node)
+
+        print("\n\nPrinting edges")
+        for edge in self.edges:
+            print(edge)
          
 
 if __name__ == "__main__":
-    bt = pn.widgets.Button(name="haha")
-    rf1 = ReactFlow(button=bt)
-    rf2 = ReactFlow(button=bt)
-    rf3 = ReactFlow(button=bt)
 
-    bt.on_click(lambda l: print("haha"))
+    bt = pn.widgets.Button(name="pn.widgets.Button")
+    bt.on_click(lambda event:print("Clicked"))
+    col = pn.layout.Column(pn.pane.Markdown("pn.layout.Column example"), bt, pn.widgets.Select(options=["option 1", "option 2"], width=150))
+    rf1 = ReactFlow(button=col)
+    rf2 = ReactFlow(button=col)
+    rf3 = ReactFlow(button=col)
+
     for rf in [rf1, rf2, rf3]:
          rf.param.watch(rf.print_nodes, "nodes")
 
-    pn.Row(pn.Column(rf1, rf2), rf3).show()
+    rf1.show()
+    # pn.Row(pn.Column(rf1, rf2), rf3).show()
