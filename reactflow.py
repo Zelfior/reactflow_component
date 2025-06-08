@@ -70,11 +70,12 @@ class ReactFlowNode:
     node_class_name = ""
     ports:List[NodePort]
     plugged_nodes:Dict[str, List['ReactFlowNode']]
+    name:str
 
-    def create(name:str):
+    def create():
         raise NotImplementedError
 
-    def update(name:str):
+    def update():
         raise NotImplementedError
 
 class ReactFlow(ReactComponent):
@@ -114,8 +115,8 @@ class ReactFlow(ReactComponent):
         self.nodes_classes = nodes_classes
         self.node_class_labels = [c.node_class_name for c in self.nodes_classes]
 
-        # self.param.watch(self.update_nodes, "nodes")
-        # self.param.watch(self.update_nodes, "edges")
+        self.param.watch(self.update_nodes, "nodes")
+        self.param.watch(self.update_nodes, "edges")
 
     def update_node_value(self, node_name:str, parameter_name:str, parameter_value:Any):
          self._send_event(ESMEvent, data=f"{node_name}@{parameter_name}@{parameter_value}")
@@ -130,16 +131,17 @@ class ReactFlow(ReactComponent):
                     print(f"Creating node of type {node_type}")
 
                     node = c()
-                    new_item = node.create(f"{node_id}")
+                    node.name = f"{node_id}"
+                    new_item = node.create()
                     
                     self.nodes_instances.append(node)
                     
-                    self.items += [new_item]
+                    self.items = self.items + [new_item]
                     self.item_ports = self.item_ports + [[[p.direction.value, p.position.value, p.name] for p in c.ports]]
 
         print("Received message :", data, )
 
-    def print_nodes(self, _):
+    def print_state(self, _):
         print("\n\nPrinting nodes")
         
         for node in self.nodes:
@@ -148,23 +150,31 @@ class ReactFlow(ReactComponent):
         print("\n\nPrinting edges")
         for edge in self.edges:
             print(edge)
-            
-    # def update_nodes(self, _):
-    #     print("Updating nodes")
-    #     self.get_node_tree()
-         
-    # def get_node_tree(self,):
-        
-    #     for node in self.nodes_instances:
-    #         node.plugged_nodes = {port.name : [] for port in node.ports}
 
-    #     for edge in self.edges:
-    #         source_node = [node for node in self.nodes if node['id'] == edge["source"]][0]
-    #         target_node = [node for node in self.nodes if node['id'] == edge["target"]][0]
+        self.nodes = [e for e in self.nodes]
+        self.edges = [e for e in self.edges]
             
-    #         print(source_node, target_node)
-# {'source': 'dndnode_1', 'sourceHandle': 'input', 'target': 'dndnode_0', 'targetHandle': 'output', 'id': 'reactflow__edge-dndnode_1input-dndnode_0output'}
-        
+    def update_nodes(self, _):
+        print("Updating nodes")
+        self.build_node_tree()
+
+        for node in self.nodes_instances:
+            node.update()
+         
+    def build_node_tree(self,):
+        for node in self.nodes_instances:
+            node.plugged_nodes = {port.name : [] for port in node.ports}
+
+        for edge in self.edges:
+            source_node = [node for node in self.nodes_instances if node.name == edge["source"]][0]
+            target_node = [node for node in self.nodes_instances if node.name == edge["target"]][0]
+
+            source_port_name = edge["sourceHandle"]
+            target_port_name = edge["targetHandle"]
+
+            source_node.plugged_nodes[source_port_name].append(target_node)
+            target_node.plugged_nodes[target_port_name].append(source_node)
+
 
 if __name__ == "__main__":
     class FloatInputNode(ReactFlowNode):
@@ -172,38 +182,53 @@ if __name__ == "__main__":
         node_class_name = "Float Input"
         ports:List[NodePort] = [NodePort(direction=PortDirection.OUTPUT, position=PortPosition.BOTTOM, name="output")]
 
-        def __init__(self,):
+        def __init__(self, ):
             self.mkdown = pn.pane.Markdown("Drag & drop example")
             self.float_input = pn.widgets.FloatInput(value=0., width=100)
 
-        def create(self, name:str):
+        def create(self, ):
             return pn.layout.Column(
                                         self.mkdown, 
                                         self.float_input, 
-                                        name=name, 
+                                        name=self.name, 
                                         align="center"
                                     )
+        
+        def update(self,):
+            pass
+
 
     class ResultNode(ReactFlowNode):
         child:pn.viewable.Viewable = None
         node_class_name = "Result"
         ports:List[NodePort] = [NodePort(direction=PortDirection.INPUT, position=PortPosition.TOP, name="input")]
 
-        def __init__(self,):
+        def __init__(self, ):
             self.result_label = pn.pane.Markdown("Result : Undefined")
 
-        def create(self, name:str):
+        def create(self, ):
             return pn.layout.Column(
                                         self.result_label, 
-                                        name=name, 
+                                        name=self.name, 
                                         align="center"
                                     )
+        
+        def update(self,):
+            value = 0
+
+            if len(self.plugged_nodes["input"]) == 0:
+                self.result_label.object = f"Result : Undefined"
+            else:
+                for float_input in self.plugged_nodes["input"]:
+                    value += float_input.float_input.value
+
+                self.result_label.object = f"Addition result : {round(value, 1)}"
 
 
 
     def make_reactflow():
         rf1 = ReactFlow(nodes_classes = [FloatInputNode, ResultNode])
-        rf1.param.watch(rf1.print_nodes, "nodes")
+        # rf1.param.watch(rf1.print_state, "nodes")
 
         return rf1
 
