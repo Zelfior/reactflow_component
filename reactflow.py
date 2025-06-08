@@ -1,11 +1,11 @@
 
+from enum import Enum
 from pathlib import Path
-from typing import Any, List
+from typing import Any, Dict, List, NamedTuple, Type
 import panel as pn
 
 from panel.custom import Child, Children, ReactComponent, ESMEvent
 import param
-
 # reactflow site : https://reactflow.dev/learn
 # reactflow github :https://github.com/xyflow/xyflow/tree/main/packages/react
 # reactflow custom component : https://reactflow.dev/learn/customization/custom-nodes
@@ -50,26 +50,45 @@ def make_css(node_name):
     """.replace("{node_name}", node_name)
 """Basic node display that is added to the default style.css"""
 
-class NodeExample:
+class PortDirection(Enum):
+    INPUT=0
+    OUTPUT=1
+
+class PortPosition(Enum):
+    TOP=0
+    BOTTOM=1
+    RIGHT=2
+    LEFT=3
+
+class NodePort(NamedTuple):
+    direction:PortDirection
+    position:PortPosition
+    name:str
+
+class ReactFlowNode:
     child:pn.viewable.Viewable = None
-    name = "panelWidget"
+    node_class_name = ""
+    ports:List[NodePort]
+    plugged_nodes:Dict[str, List['ReactFlowNode']]
 
     def create(name:str):
-        return pn.layout.Column(pn.pane.Markdown("Drag & drop example"), pn.widgets.FloatInput(value=0.), name=name)
+        raise NotImplementedError
 
-
+    def update(name:str):
+        raise NotImplementedError
 
 class ReactFlow(ReactComponent):
 
     edges = param.List()
     nodes = param.List()
+    item_ports = param.List()
 
     items = Children()
 
-    nodes_classes = List[NodeExample]
+    nodes_classes: List[Type[ReactFlowNode]] = []
+    nodes_instances: List[ReactFlowNode] = []
 
-    def __init__(self, sizing_mode = "stretch_both", **kwargs):
-        super().__init__(sizing_mode=sizing_mode, **kwargs)
+    node_class_labels = param.List()
 
     _importmap = {
         "imports": {
@@ -80,33 +99,44 @@ class ReactFlow(ReactComponent):
     
     _stylesheets = [
                         "https://unpkg.com/reactflow@11.11.4/dist/style.css",
-                        make_css("textUpdater"),
-                        make_css("dropBox"),
-                        make_css("panelWidget"),
                         make_css("dndnode"),
                         make_css("input"),
-                        Path("dnd_flow.css")
+                        make_css("panelWidget"),
+                        Path("dnd_flow.css"),
                     ]
 
     _esm = Path(__file__).parent / "reactflow.js"
 
+
+    def __init__(self, sizing_mode = "stretch_both", nodes_classes:List[Type[ReactFlowNode]] = [], **kwargs):
+        super().__init__(sizing_mode=sizing_mode, **kwargs)
+
+        self.nodes_classes = nodes_classes
+        self.node_class_labels = [c.node_class_name for c in self.nodes_classes]
+
+        # self.param.watch(self.update_nodes, "nodes")
+        # self.param.watch(self.update_nodes, "edges")
+
     def update_node_value(self, node_name:str, parameter_name:str, parameter_value:Any):
          self._send_event(ESMEvent, data=f"{node_name}@{parameter_name}@{parameter_value}")
 
-    def _handle_msg(self, data):
+    def _handle_msg(self, data:str):
         if data.startswith("NEW_NODE"):
             _, node_id, node_type = data.split(":")
 
             new_item = None
             for c in self.nodes_classes:
-                if c.name == node_type:
+                if c.node_class_name == node_type:
                     print(f"Creating node of type {node_type}")
-                    new_item = c.create(f"{node_id}")
-                    print(new_item)
-                    # new_child = Child(new_item)
+
+                    node = c()
+                    new_item = node.create(f"{node_id}")
+                    
+                    self.nodes_instances.append(node)
                     
                     self.items += [new_item]
-                    
+                    self.item_ports = self.item_ports + [[[p.direction.value, p.position.value, p.name] for p in c.ports]]
+
         print("Received message :", data, )
 
     def print_nodes(self, _):
@@ -118,18 +148,61 @@ class ReactFlow(ReactComponent):
         print("\n\nPrinting edges")
         for edge in self.edges:
             print(edge)
+            
+    # def update_nodes(self, _):
+    #     print("Updating nodes")
+    #     self.get_node_tree()
          
+    # def get_node_tree(self,):
+        
+    #     for node in self.nodes_instances:
+    #         node.plugged_nodes = {port.name : [] for port in node.ports}
+
+    #     for edge in self.edges:
+    #         source_node = [node for node in self.nodes if node['id'] == edge["source"]][0]
+    #         target_node = [node for node in self.nodes if node['id'] == edge["target"]][0]
+            
+    #         print(source_node, target_node)
+# {'source': 'dndnode_1', 'sourceHandle': 'input', 'target': 'dndnode_0', 'targetHandle': 'output', 'id': 'reactflow__edge-dndnode_1input-dndnode_0output'}
+        
 
 if __name__ == "__main__":
+    class FloatInputNode(ReactFlowNode):
+        child:pn.viewable.Viewable = None
+        node_class_name = "Float Input"
+        ports:List[NodePort] = [NodePort(direction=PortDirection.OUTPUT, position=PortPosition.BOTTOM, name="output")]
+
+        def __init__(self,):
+            self.mkdown = pn.pane.Markdown("Drag & drop example")
+            self.float_input = pn.widgets.FloatInput(value=0., width=100)
+
+        def create(self, name:str):
+            return pn.layout.Column(
+                                        self.mkdown, 
+                                        self.float_input, 
+                                        name=name, 
+                                        align="center"
+                                    )
+
+    class ResultNode(ReactFlowNode):
+        child:pn.viewable.Viewable = None
+        node_class_name = "Result"
+        ports:List[NodePort] = [NodePort(direction=PortDirection.INPUT, position=PortPosition.TOP, name="input")]
+
+        def __init__(self,):
+            self.result_label = pn.pane.Markdown("Result : Undefined")
+
+        def create(self, name:str):
+            return pn.layout.Column(
+                                        self.result_label, 
+                                        name=name, 
+                                        align="center"
+                                    )
+
+
 
     def make_reactflow():
-        
-        bt = pn.widgets.Button(name="pn.widgets.Button")
-        bt.on_click(lambda event:print("Clicked"))
-        col = pn.layout.Column(pn.pane.Markdown("pn.layout.Column example"), bt, pn.widgets.Select(options=["option 1", "option 2"], width=150))
-
-        rf1 = ReactFlow()
-        rf1.nodes_classes=[NodeExample]
+        rf1 = ReactFlow(nodes_classes = [FloatInputNode, ResultNode])
         rf1.param.watch(rf1.print_nodes, "nodes")
 
         return rf1

@@ -50,6 +50,7 @@ export const useDnD = () => {
     return useContext(DnDContext);
 };
 
+
 function Sidebar() {
     const [_, setType] = useDnD();
 
@@ -58,33 +59,26 @@ function Sidebar() {
         event.dataTransfer.effectAllowed = 'move';
     };
 
+    const [node_class_labels, setNodeClassLabels] = useModel().useState("node_class_labels");
+
+    console.log(node_class_labels);
+
     return (
         <aside>
             <div className="description">
                 {/* You can drag these nodes to the pane on the right. */}
             </div>
             <div className="nodes-container">
-                <div
-                    className="dndnode input"
-                    onDragStart={(event) => onDragStart(event, 'textUpdater')}
-                    draggable
-                >
-                    Input Node
-                </div>
-                <div
-                    className="dndnode"
-                    onDragStart={(event) => onDragStart(event, 'dropBox')}
-                    draggable
-                >
-                    Default Node
-                </div>
-                <div
-                    className="dndnode output"
-                    onDragStart={(event) => onDragStart(event, 'panelWidget')}
-                    draggable
-                >
-                    Output Node
-                </div>
+                {node_class_labels.map((label, index) => (
+                    <div
+                        key={index}
+                        className={`dndnode`}
+                        onDragStart={(event) => onDragStart(event, label)}
+                        draggable
+                    >
+                        {label} Node
+                    </div>
+                ))}
             </div>
         </aside>
     );
@@ -109,105 +103,47 @@ function Sidebar() {
  * 
  * 
  */
-function DropBox({ id, data }) {
-    const { setNodes } = useReactFlow();
-
-    const updateData = (evt) => {
-        const inputVal = evt.target.value;
-
-        setNodes((nodes) =>
-            nodes.map((node) => {
-                if (node.id === id) {
-                    return {
-                        ...node,
-                        data: {
-                            ...node.data,
-                            value: inputVal,
-                        },
-                    };
-                }
-                return node;
-            })
-        );
-    };
-
-    return (
-        <div style={{ border: '1px solid #ddd', padding: '10px', borderRadius: '5px' }}>
-            <Handle type="target" position={Position.Top} />
-            <select onChange={updateData}>
-                <option value="light">light</option>
-                <option value="dark">dark</option>
-                <option value="system">system</option>
-            </select>
-            <Handle type="source" position={Position.Bottom} />
-        </div>
-    );
-}
-
-function TextUpdaterNode({ id, data, //onMyTrigger 
-}) {
-    const { setNodes } = useReactFlow();
-    // const model = useModel(); // Access the model using the custom hook at the top level
-
-    const updateData = (evt) => {
-        const inputVal = evt.target.value;
-
-        setNodes((nodes) =>
-            nodes.map((node) => {
-                if (node.id === id) {
-                    return {
-                        ...node,
-                        data: {
-                            ...node.data,
-                            value: inputVal,
-                        },
-                    };
-                }
-                return node;
-            })
-        );
-
-        // onMyTrigger(new_nodes);
-    };
-
-    return (
-        <div>
-            <div>Node graph</div>
-            <div>
-                <input
-                    onChange={updateData}
-                    value={data.value}
-                    className="xy-theme__input"
-                />
-            </div>
-            <Handle type="source" position={Position.Bottom} />
-        </div>
-    );
-}
+const positions = [Position.Top, Position.Bottom, Position.Right, Position.Left];
 
 function PanelWidgetNode({ id, data }) {
     const { setNodes } = useReactFlow();
     const model = useModel(); // Access the model using the custom hook at the top level
 
     let children = model.get_child("items");
+    let [ports_list, setPortsList] = model.useState("item_ports");
+
     let child;
+    let ports;
 
     const self_num = parseInt(id.replace('dndnode_', ''), 10);
-    children.forEach(element => {
-        const child_num = parseInt(element.key.replace('items', ''), 10);
-        console.log(self_num, child_num);
-        if (self_num == child_num){
-            child = element;
+
+    for (let index = 0; index < children.length; index++) {
+        if (self_num == index){
+            child = children[index];
+            ports = ports_list[index];
+            break;
         }
-    });
+    }
 
     return (
         <div>
-            <div>Panel widget</div>
             <div>
                 {child}
             </div>
-            <Handle type="source" position={Position.Bottom} />
+            {ports && ports.map((handle, index) => {
+                const [typeValue, positionValue, name] = handle;
+                const type = typeValue === 0 ? 'target' : 'source';
+                const position = positions[positionValue];
+
+                return (
+                <Handle
+                    key={index} // Make sure to use a unique key for each element in the list
+                    type={type}
+                    position={position}
+                    id={name}
+                />
+                );
+            })}
         </div>
     );
 }
@@ -219,62 +155,9 @@ function PanelWidgetNode({ id, data }) {
  * 
  */
 const initialNodes = [
-    {
-        id: '1',
-        position: { x: 161, y: -13 },
-        data: { value: 'Incoming' },
-        type: 'textUpdater',
-    },
-    {
-        id: '2',
-        position: { x: 180, y: 65 },
-        data: { value: 'feature' },
-        type: 'dropBox',
-    },
-    {
-        id: '3',
-        position: { x: 100, y: 125 },
-        data: { label: 'panelWidget' },
-        type: 'panelWidget',
-    },
-    {
-        id: '4',
-        position: { x: 270, y: 125 },
-        data: { label: 'parametrize' },
-    },
-    {
-        id: '5',
-        position: { x: 180, y: 185 },
-        data: { label: 'plots' },
-    },
 ];
 
 const initialEdges = [
-    {
-        source: '1',
-        target: '2',
-        id: 'reactflow__edge-1-2',
-    },
-    {
-        source: '2',
-        target: '3',
-        id: 'reactflow__edge-2-3',
-    },
-    {
-        source: '3',
-        target: '5',
-        id: 'reactflow__edge-3-5',
-    },
-    {
-        source: '2',
-        target: '4',
-        id: 'reactflow__edge-2-4',
-    },
-    {
-        source: '4',
-        target: '5',
-        id: 'reactflow__edge-4-5',
-    },
 ];
 
 
@@ -287,8 +170,6 @@ const initialEdges = [
  */
 
 const getNodeTypes = (onMyTrigger) => ({
-  textUpdater: TextUpdaterNode,// (props) => <TextUpdaterNode {...props} onMyTrigger={onMyTrigger} />,
-  dropBox: DropBox,
   panelWidget: PanelWidgetNode,
 });
 
@@ -366,7 +247,7 @@ const DnDFlow = () => {
             });
             const newNode = {
                 id: getId(),
-                type,
+                type:'panelWidget',
                 position,
                 data: { label: `${type} node` },
             };
