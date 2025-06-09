@@ -1,7 +1,7 @@
 
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Type
+from typing import Any, Callable, Dict, List, NamedTuple, Type
 import panel as pn
 
 from panel.custom import Child, Children, ReactComponent, ESMEvent
@@ -72,10 +72,13 @@ class ReactFlowNode:
     plugged_nodes:Dict[str, List['ReactFlowNode']]
     name:str
 
-    def create():
+    def create(self, ):
         raise NotImplementedError
 
-    def update():
+    def update(self, ):
+        raise NotImplementedError
+    
+    def set_watched_variables(self, funct:Callable):
         raise NotImplementedError
 
 class ReactFlow(ReactComponent):
@@ -93,8 +96,7 @@ class ReactFlow(ReactComponent):
 
     _importmap = {
         "imports": {
-            "reactflow": "https://esm.sh/reactflow@11.11.4",
-            "react-select": "https://esm.sh/react-select@5.10.1",    
+            "reactflow": "https://esm.sh/reactflow@11.11.4", 
         }
     }
     
@@ -132,6 +134,7 @@ class ReactFlow(ReactComponent):
 
                     node = c()
                     node.name = f"{node_id}"
+                    node.set_watched_variables(self.update_nodes)
                     new_item = node.create()
                     
                     self.nodes_instances.append(node)
@@ -183,12 +186,10 @@ if __name__ == "__main__":
         ports:List[NodePort] = [NodePort(direction=PortDirection.OUTPUT, position=PortPosition.BOTTOM, name="output")]
 
         def __init__(self, ):
-            self.mkdown = pn.pane.Markdown("Drag & drop example")
             self.float_input = pn.widgets.FloatInput(value=0., width=100)
 
         def create(self, ):
             return pn.layout.Column(
-                                        self.mkdown, 
                                         self.float_input, 
                                         name=self.name, 
                                         align="center"
@@ -197,6 +198,8 @@ if __name__ == "__main__":
         def update(self,):
             pass
 
+        def set_watched_variables(self, funct:Callable):
+            self.float_input.param.watch(funct, "value")
 
     class ResultNode(ReactFlowNode):
         child:pn.viewable.Viewable = None
@@ -224,13 +227,13 @@ if __name__ == "__main__":
 
                 self.result_label.object = f"Addition result : {round(value, 1)}"
 
+        def set_watched_variables(self, funct:Callable):
+            pass
 
 
     def make_reactflow():
         rf1 = ReactFlow(nodes_classes = [FloatInputNode, ResultNode])
-        # rf1.param.watch(rf1.print_state, "nodes")
 
         return rf1
 
     make_reactflow().show()
-    # pn.Row(pn.Column(rf1, rf2), rf3).show()
