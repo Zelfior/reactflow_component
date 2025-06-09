@@ -8,6 +8,7 @@ import {
     useEdgesState,
     addEdge,
     ReactFlowProvider,
+    useUpdateNodeInternals
 } from 'reactflow';
 
 import { useRef, useCallback, createContext, useContext, useState, useMemo } from 'react';
@@ -61,8 +62,6 @@ function Sidebar() {
 
     const [node_class_labels, setNodeClassLabels] = useModel().useState("node_class_labels");
 
-    console.log(node_class_labels);
-
     return (
         <aside>
             <div className="description">
@@ -108,6 +107,7 @@ const positions = [Position.Top, Position.Bottom, Position.Right, Position.Left]
 function PanelWidgetNode({ id, data }) {
     const { setNodes } = useReactFlow();
     const model = useModel(); // Access the model using the custom hook at the top level
+    const updateNodeInternals = useUpdateNodeInternals();
 
     let children = model.get_child("items");
     let [ports_list, setPortsList] = model.useState("item_ports");
@@ -124,12 +124,15 @@ function PanelWidgetNode({ id, data }) {
             break;
         }
     }
+    
+    updateNodeInternals(id);
 
     return (
         <div>
             <div>
                 {child}
             </div>
+            
             {ports && ports.map((handle, index) => {
                 const [typeValue, positionValue, name] = handle;
                 const type = typeValue === 0 ? 'target' : 'source';
@@ -137,7 +140,7 @@ function PanelWidgetNode({ id, data }) {
 
                 return (
                 <Handle
-                    key={index} // Make sure to use a unique key for each element in the list
+                    // key={index} // Make sure to use a unique key for each element in the list
                     type={type}
                     position={position}
                     id={name}
@@ -179,13 +182,17 @@ const getId = () => `dndnode_${id++}`;
 const DnDFlow = () => {
     const model = useModel();
     const reactFlowWrapper = useRef(null);
-    // const reactFlowInstance = useReactFlow();
+    
     const [py_nodes, py_setNodes] = model.useState('nodes');
     const [py_edges, py_setEdges] = model.useState('edges');
+
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
     const { screenToFlowPosition } = useReactFlow();
     const [type] = useDnD();
+    
+
     if (nodes !== py_nodes) {
         py_setNodes(nodes);
     }
@@ -197,10 +204,25 @@ const DnDFlow = () => {
     const onConnect = useCallback(
         (params) => {
             setEdges((eds) => addEdge(params, eds));
-            model.send_msg('Connected');
         },
-        [setEdges]
+        [setEdges, addEdge, edges]
     );
+
+    const onEdgesChangeHandler = (changes) => {
+        onEdgesChange(changes);
+
+        let new_edge = [];
+        changes.forEach((change) => {
+            if (Object.hasOwn(change, 'item')) {
+                new_edge.push(change.item);
+            }
+        });
+
+        if (new_edge.length !== 0) {
+            py_setEdges(new_edge);
+            model.send_msg('Edge Change');
+        }
+    };
 
     const onNodesChangeHandler = (changes) => {
         onNodesChange(changes);
@@ -225,7 +247,6 @@ const DnDFlow = () => {
         // py_setNodes(new_nodes);
         // model.send_msg('Node Change from my trigger');
     }, [model]);
-
 
     const onDragOver = useCallback((event) => {
         event.preventDefault();
@@ -272,10 +293,10 @@ const DnDFlow = () => {
                 <ReactFlow
                     nodes={nodes}
                     edges={edges}
-                onNodesChange={onNodesChangeHandler}
-                    onEdgesChange={onEdgesChange}
+                    onNodesChange={onNodesChangeHandler}
+                    onEdgesChange={onEdgesChangeHandler}
                     onConnect={onConnect}
-                nodeTypes={nodeTypes}
+                    nodeTypes={nodeTypes}
                     onDrop={onDrop}
                     onDragStart={onDragStart}
                     onDragOver={onDragOver}
@@ -292,11 +313,13 @@ const DnDFlow = () => {
 };
 
 export function render({ model }) {
-    return (<ReactFlowProvider>
-                <ModelProvider model={model}>
-        <DnDProvider>
-            <DnDFlow />
-        </DnDProvider>
-                    </ModelProvider>
-    </ReactFlowProvider>);
+    return (
+        <ReactFlowProvider>
+            <ModelProvider model={model}>
+                <DnDProvider>
+                    <DnDFlow />
+                </DnDProvider>
+            </ModelProvider>
+        </ReactFlowProvider>
+    );
 };
