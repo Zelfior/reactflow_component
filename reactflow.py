@@ -144,7 +144,7 @@ class ReactFlow(ReactComponent):
 
         print("Received message :", data, )
 
-    def print_state(self, _):
+    def print_state(self, _=None):
         print("\n\nPrinting nodes")
         
         for node in self.nodes:
@@ -161,8 +161,12 @@ class ReactFlow(ReactComponent):
         print("Updating nodes")
         self.build_node_tree()
 
+        self.nodes_instances = [node for node in self.nodes_instances if node.name in list(n["id"] for n in self.nodes)]
+
         for node in self.nodes_instances:
             node.update()
+
+        self.print_state()
          
     def build_node_tree(self,):
         for node in self.nodes_instances:
