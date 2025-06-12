@@ -80,6 +80,9 @@ class ReactFlowNode:
     
     def set_watched_variables(self, funct:Callable):
         raise NotImplementedError
+    
+    def get_node_json_value(self,):
+        raise NotImplementedError
 
 class ReactFlow(ReactComponent):
 
@@ -205,6 +208,9 @@ if __name__ == "__main__":
         def set_watched_variables(self, funct:Callable):
             self.float_input.param.watch(funct, "value")
 
+        def get_node_json_value(self):
+            return {"value" : self.float_input.value}
+
     class ResultNode(ReactFlowNode):
         child:pn.viewable.Viewable = None
         node_class_name = "Result"
@@ -227,12 +233,15 @@ if __name__ == "__main__":
                 self.result_label.object = f"Result : Undefined"
             else:
                 for float_input in self.plugged_nodes["input"]:
-                    value += float_input.float_input.value
+                    value += float_input.get_node_json_value()["value"]
 
                 self.result_label.object = f"Addition result : {round(value, 1)}"
 
         def set_watched_variables(self, funct:Callable):
             pass
+
+        def get_node_json_value(self):
+            return {"value" : self.result_label.object}
 
 
     def make_reactflow():
