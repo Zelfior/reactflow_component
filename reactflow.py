@@ -6,6 +6,7 @@ import panel as pn
 
 from panel.custom import Child, Children, ReactComponent, ESMEvent
 import param
+
 # reactflow site : https://reactflow.dev/learn
 # reactflow github :https://github.com/xyflow/xyflow/tree/main/packages/react
 # reactflow custom component : https://reactflow.dev/learn/customization/custom-nodes
@@ -60,10 +61,43 @@ class PortPosition(Enum):
     RIGHT=2
     LEFT=3
 
-class NodePort(NamedTuple):
-    direction:PortDirection
-    position:PortPosition
-    name:str
+class NodePort:
+    def __init__(self, 
+                    direction:PortDirection, 
+                    position:PortPosition, 
+                    name:str, 
+                    display_name:bool = False,
+                    offset:float = None):
+        """Node port class constructor : stores the information for each port of a node.
+
+        Parameters
+        ----------
+        direction : PortDirection
+            Whether the port represents an input or an output
+        position : PortPosition
+            Location of the port around the node : BOTTOM, TOP, LEFT or RIGHT
+        name : str
+            Port name
+        display_name : bool, optional
+            Display the port name on the node (only available for LEFT and RIGHT ports). Defaults to False., by default False
+        offset : float, optional
+            Port position offset to the top/left based on the position. If None, the port will be centered to the edge. Defaults to None, by default None
+        """        
+        assert not (display_name and position in [PortPosition.TOP, PortPosition.BOTTOM]), "Node port name can only be displayed if located on left or right."
+        assert not (display_name and offset is None), "Node port name can only be displayed if the port offset is provided."
+
+        self.direction:PortDirection = direction
+        """Whether the port represents an input or an output"""
+        self.position:PortPosition = position
+        """Location of the port around the node : BOTTOM, TOP, LEFT or RIGHT"""
+        self.name:str = name
+        """Port name"""
+        self.display_name:bool = display_name
+        """Display the port name on the node (only available for LEFT and RIGHT ports)"""
+        self.offset:float = offset
+        """Port position offset to the top/left based on the position. If None, the port will be centered to the edge."""
+
+
 
 class ReactFlowNode:
     child:pn.viewable.Viewable = None
@@ -83,6 +117,7 @@ class ReactFlowNode:
     
     def get_node_json_value(self,):
         raise NotImplementedError
+
 
 class ReactFlow(ReactComponent):
 
@@ -113,7 +148,6 @@ class ReactFlow(ReactComponent):
 
     _esm = Path(__file__).parent / "reactflow.js"
 
-
     def __init__(self, sizing_mode = "stretch_both", nodes_classes:List[Type[ReactFlowNode]] = [], **kwargs):
         super().__init__(sizing_mode=sizing_mode, **kwargs)
 
@@ -143,7 +177,7 @@ class ReactFlow(ReactComponent):
                     self.nodes_instances.append(node)
                     
                     self.items = self.items + [new_item]
-                    self.item_ports = self.item_ports + [[[p.direction.value, p.position.value, p.name] for p in c.ports]]
+                    self.item_ports = self.item_ports + [[[p.direction.value, p.position.value, p.name, p.display_name, p.offset] for p in c.ports]]
 
         print("Received message :", data, )
 

@@ -6,12 +6,32 @@ import pandas as pd
 import math
 
 from bokeh.plotting import figure
-from bokeh.models import ColumnDataSource
-from bokeh.io import push_notebook
+from bokeh.io import curdoc
 
 from reactflow import ReactFlow, ReactFlowNode, NodePort, PortDirection, PortPosition
 
 
+"""
+    Creating objects used by default by the nodes
+"""
+p = figure()
+p.line(x=[0], y=[0])
+
+pn.state.curdoc = curdoc()
+
+bokeh_plot = pn.pane.Bokeh(p, sizing_mode = "stretch_both")
+
+df = pd.DataFrame({
+    "sinus": [math.sin(t/10) for t in range(50)],
+    "cosinus": [math.cos(t/10) for t in range(50)],
+    "atan": [math.atan(t/10) for t in range(50)],
+})
+
+
+
+"""
+    Nodes definition
+"""
 class TextInputNode(ReactFlowNode):
     child:pn.viewable.Viewable = None
     node_class_name = "Text Input"
@@ -37,17 +57,14 @@ class TextInputNode(ReactFlowNode):
         return {"value" : self.text_input.value}
 
 
-df = pd.DataFrame({
-    "sinus": [math.sin(t/10) for t in range(50)],
-    "cosinus": [math.cos(t/10) for t in range(50)],
-    "atan": [math.atan(t/10) for t in range(50)],
-})
-
-
 class InputDataFrameNode(ReactFlowNode):
     child:pn.viewable.Viewable = None
     node_class_name = "Input DataFrame"
-    ports:List[NodePort] = [NodePort(direction=PortDirection.OUTPUT, position=PortPosition.BOTTOM, name="output")]
+    ports:List[NodePort] = [NodePort(direction=PortDirection.OUTPUT, 
+                                        position=PortPosition.RIGHT, 
+                                        name="Output", 
+                                        display_name=True, 
+                                        offset=35)]
 
     def __init__(self):
         self.df = df
@@ -72,9 +89,10 @@ class InputDataFrameNode(ReactFlowNode):
 class ColumnSelectNode(ReactFlowNode):
     child:pn.viewable.Viewable = None
     node_class_name = "Column select"
+
     ports:List[NodePort] = [
-            NodePort(direction=PortDirection.INPUT, position=PortPosition.TOP, name="input"),
-            NodePort(direction=PortDirection.OUTPUT, position=PortPosition.BOTTOM, name="output")
+            NodePort(direction=PortDirection.INPUT, position=PortPosition.LEFT, name="DataFrame", offset=30, display_name=True),
+            NodePort(direction=PortDirection.OUTPUT, position=PortPosition.RIGHT, name="Output", offset=30, display_name=True)
         ]
 
     def __init__(self):
@@ -89,54 +107,69 @@ class ColumnSelectNode(ReactFlowNode):
                                 )
     
     def update(self,):
-        if len(self.plugged_nodes["input"]) == 0:
+        if len(self.plugged_nodes["DataFrame"]) == 0:
             self.df_columns.options = []
             self.column_value = []
         else:
-            self.df_columns.options = list(self.plugged_nodes["input"][0].get_node_json_value()["dataframe"].columns)
+            self.df_columns.options = list(self.plugged_nodes["DataFrame"][0].get_node_json_value()["dataframe"].columns)
 
             if self.df_columns.value in self.df_columns.options:
-                self.column_value = list(self.plugged_nodes["input"][0].get_node_json_value()["dataframe"][self.df_columns.value])
+                self.column_value = list(self.plugged_nodes["DataFrame"][0].get_node_json_value()["dataframe"][self.df_columns.value])
 
     def set_watched_variables(self, funct:Callable):
         self.df_columns.param.watch(funct, "value")
 
     def get_node_json_value(self):
-        return {"value" : self.column_value}
+        return {"value" : self.column_value, "name":self.df_columns.value}
+    
 
 
 class BokehPlotNode(ReactFlowNode):
     child:pn.viewable.Viewable = None
     node_class_name = "Bokeh plot"
     ports:List[NodePort] = [
-            NodePort(direction=PortDirection.INPUT, position=PortPosition.TOP, name="input"),
+            NodePort(direction=PortDirection.INPUT, position=PortPosition.LEFT, name="Title", offset=20, display_name=True),
+            NodePort(direction=PortDirection.INPUT, position=PortPosition.LEFT, name="Input", offset=40, display_name=True),
         ]
 
     def __init__(self):
-        self.data = {"x_values":[], 'y_values': []}
-        self.source = ColumnDataSource(data=self.data)
-
-        self.p = figure(width=500, height=500)
-        self.p.line(x="x_values", y='y_values', source=self.source)
-
-        self.bokeh = pn.pane.Bokeh(self.p)
+        self.plot:pn.pane.Bokeh = bokeh_plot
+        self.display_legend = pn.widgets.Checkbox(name="Display legend", value=True)
 
     def create(self, ):
         return pn.layout.Column(
-                                    self.bokeh, 
+                                    self.display_legend,
                                     name=self.name, 
-                                    align="center"
+                                    align="center",
+                                    margin=0
                                 )
     
-    def update(self,):
-        if len(self.plugged_nodes["input"]) == 0:
-            self.source.data = {"y_values": [], "x_values": []}
-        else:
-            self.source.data = {"x_values":list(range(len(self.plugged_nodes["input"][0].get_node_json_value()["value"]))), 
-                                "y_values": list(self.plugged_nodes["input"][0].get_node_json_value()["value"])}
+    async def replace_figure(self,):
+        self.plot.object = self.figure
 
-        print(self.source.data)
-        pn.io.push_notebook(self.bokeh)
+    def update(self,):
+        print("Updating plot...")
+        self.figure = figure(width=500, height=500)
+
+        for input_ in self.plugged_nodes["Input"]:
+            x=list(range(len(input_.get_node_json_value()["value"])))
+            y= list(input_.get_node_json_value()["value"])
+
+            label = None
+            if self.display_legend.value and "name" in input_.get_node_json_value():
+                label = input_.get_node_json_value()["name"]
+
+            self.figure.line(x=x, y=y, legend_label = label)
+
+        if len(self.plugged_nodes["Title"]) != 0:
+            title = self.plugged_nodes["Title"][0].get_node_json_value()
+
+            if "value" in title and isinstance(title["value"], str):
+                self.figure.title = title["value"]
+
+            self.figure.legend
+
+        pn.state.curdoc.add_next_tick_callback(self.replace_figure)
 
     def set_watched_variables(self, funct:Callable):
         pass
@@ -144,6 +177,13 @@ class BokehPlotNode(ReactFlowNode):
     def get_node_json_value(self):
         return {}
 
-
-
-ReactFlow(nodes_classes = [TextInputNode, InputDataFrameNode, ColumnSelectNode, BokehPlotNode]).show()
+"""
+    Panel definition and display
+"""
+pn.Row(
+        ReactFlow(
+                    nodes_classes = [TextInputNode, InputDataFrameNode, ColumnSelectNode, BokehPlotNode], 
+                  ),
+        bokeh_plot,
+        sizing_mode = "stretch_both"
+    ).show()

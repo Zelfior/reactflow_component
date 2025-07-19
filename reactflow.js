@@ -8,10 +8,13 @@ import {
     useEdgesState,
     addEdge,
     ReactFlowProvider,
-    useUpdateNodeInternals
+    useUpdateNodeInternals,
+    HandleProps,
+    NodeProps,
+    getNodesBounds,
 } from 'reactflow';
 
-import { useRef, useCallback, createContext, useContext, useState, useMemo } from 'react';
+import { useRef, useCallback, createContext, useContext, useState, useMemo, forwardRef, HTMLAttributes, memo } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
 
 // Create a context for the model
@@ -86,16 +89,6 @@ function Sidebar() {
 
 
 
-
-
-
-
-
-
-
-
-
-
 /**
  * 
  *  Components definition
@@ -103,9 +96,97 @@ function Sidebar() {
  * 
  */
 const positions = [Position.Top, Position.Bottom, Position.Right, Position.Left];
+function renderPortsNames(ports) {
+  const maxOffset =
+    ports && ports.length > 0
+      ? Math.max(
+          ...ports.map(([,, , display_name, offset]) =>
+            display_name && offset !== undefined ? offset : 0
+          )
+        ) + 20 // estimated height
+      : 0;
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        top: '-20px',
+        minHeight: `${maxOffset}px`,
+        width: 'max-content',
+      }}
+    >
+      {/* Invisible block to preserve width */}
+      <div style={{ visibility: 'hidden', position: 'relative' }}>
+        {ports &&
+          ports.map(([,, name, display_name]) =>
+            display_name ? <div key={name}>{name}</div> : null
+          )}
+      </div>
+
+      {/* Absolutely positioned spans */}
+      {ports &&
+        ports.map((handle, index) => {
+          const [,, name, display_name, offset] = handle;
+
+          if (!display_name) return null;
+
+          const spanStyle =
+            offset !== undefined
+              ? {
+                  position: 'absolute',
+                  top: `${offset}px`,
+                  left: 0,
+                  whiteSpace: 'nowrap',
+                }
+              : {
+                  position: 'absolute',
+                  top: `${maxOffset*0.5}px`,
+                  left: 0,
+                  whiteSpace: 'nowrap'
+                };
+
+          return (
+            <span key={name} style={spanStyle}>
+              {name}
+            </span>
+          );
+        })}
+    </div>
+  );
+}
+
+function renderHandles(ports, origin) {
+    return ports && ports.map((handle, index) => {
+        const [typeValue, positionValue, name, display_name, offset] = handle;
+        const type = typeValue === 0 ? 'target' : 'source';
+        const position = positions[positionValue];
+
+        if (offset !== undefined) {
+            return (
+            <Handle
+                key={index}
+                type={type}
+                position={position}
+                id={name}
+                title={name}
+                style={{ [origin]: offset }}
+            />
+            );
+        } else {
+            return (
+            <Handle
+                key={index}
+                type={type}
+                position={position}
+                id={name}
+                title={name}
+            />
+            );
+        }
+    });
+}
 
 function PanelWidgetNode({ id, data }) {
-    const { setNodes } = useReactFlow();
     const model = useModel(); // Access the model using the custom hook at the top level
     const updateNodeInternals = useUpdateNodeInternals();
 
@@ -118,35 +199,60 @@ function PanelWidgetNode({ id, data }) {
     const self_num = parseInt(id.replace('dndnode_', ''), 10);
 
     for (let index = 0; index < children.length; index++) {
-        if (self_num == index){
+        if (self_num == index) {
             child = children[index];
             ports = ports_list[index];
             break;
         }
-    }
-    
+    };
+
     updateNodeInternals(id);
 
+    const leftPorts = ports && ports.filter(handle => positions[handle[1]] === Position.Left);
+    const rightPorts = ports && ports.filter(handle => positions[handle[1]] === Position.Right);
+    const topPorts = ports && ports.filter(handle => positions[handle[1]] === Position.Top);
+    const bottomPorts = ports && ports.filter(handle => positions[handle[1]] === Position.Bottom);
+
+    const gridContainerStyle = {
+        display: 'grid',
+        gridTemplateColumns: 'min-content auto min-content',
+        gap: '0px',
+    };
+
+    const gridItemStyle = {
+        // border: '1px solid black', // Uncomment for debug
+        minWidth: "fit-content"
+    };
+
     return (
-        <div>
-            <div>
+        <div style={gridContainerStyle}>
+
+            <div style={gridItemStyle}>
+                {/* Display of the left ports, and if applicable, of the list of names */}
+
+                {/* HTML element with all port names, one after the other */}
+                {renderPortsNames(leftPorts)}
+                    
+                {/* Display of Handle components */}
+                {renderHandles(leftPorts, "top")}
+            </div>
+
+            <div style={gridItemStyle}>
+                {/* Display of the top/bottom ports and actual panel element (child) */}
+
+                {renderHandles((topPorts || []).concat(bottomPorts || []), "left")}
                 {child}
             </div>
-            
-            {ports && ports.map((handle, index) => {
-                const [typeValue, positionValue, name] = handle;
-                const type = typeValue === 0 ? 'target' : 'source';
-                const position = positions[positionValue];
 
-                return (
-                <Handle
-                    // key={index} // Make sure to use a unique key for each element in the list
-                    type={type}
-                    position={position}
-                    id={name}
-                />
-                );
-            })}
+            <div style={gridItemStyle}>
+                {/* Display of the left ports, and if applicable, of the list of names */}
+
+                {/* HTML element with all port names, one after the other */}
+                {renderPortsNames(rightPorts)}
+                
+                {/* Display of Handle components */}
+                {renderHandles(rightPorts, "top")}
+            </div>
         </div>
     );
 }
@@ -173,7 +279,7 @@ const initialEdges = [
  */
 
 const getNodeTypes = (onMyTrigger) => ({
-  panelWidget: PanelWidgetNode,
+    panelWidget: PanelWidgetNode,
 });
 
 let id = 0;
@@ -182,7 +288,7 @@ const getId = () => `dndnode_${id++}`;
 const DnDFlow = () => {
     const model = useModel();
     const reactFlowWrapper = useRef(null);
-    
+
     const [py_nodes, py_setNodes] = model.useState('nodes');
     const [py_edges, py_setEdges] = model.useState('edges');
 
@@ -191,7 +297,7 @@ const DnDFlow = () => {
 
     const { screenToFlowPosition } = useReactFlow();
     const [type] = useDnD();
-    
+
 
     if (nodes !== py_nodes) {
         py_setNodes(nodes);
@@ -268,12 +374,12 @@ const DnDFlow = () => {
             });
             const newNode = {
                 id: getId(),
-                type:'panelWidget',
+                type: 'panelWidget',
                 position,
                 data: { label: `${type} node` },
             };
-            
-            model.send_msg("NEW_NODE:"+newNode.id+":"+type.toString());
+
+            model.send_msg("NEW_NODE:" + newNode.id + ":" + type.toString());
 
             setNodes((nds) => nds.concat(newNode));
         },
