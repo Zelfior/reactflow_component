@@ -1,5 +1,4 @@
 
-from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Dict, List, NamedTuple, Type
 import panel as pn
@@ -7,6 +6,9 @@ import panel as pn
 from panel.custom import Child, Children, ReactComponent, ESMEvent
 import param
 
+from reactflow_api import NodeCreation, NodeDeletion, NodeChange, NodeMove, NodeSelected, NodeDeselected
+from reactflow_api import EdgeCreation, EdgeDeletion, EdgeSelected, EdgeDeselected
+from reactflow_api import NodeCreation, ReactFlowNode, EdgeInstance, NodeInstance, NodePort, PortDirection, PortPosition
 # reactflow site : https://reactflow.dev/learn
 # reactflow github :https://github.com/xyflow/xyflow/tree/main/packages/react
 # reactflow custom component : https://reactflow.dev/learn/customization/custom-nodes
@@ -51,121 +53,7 @@ def make_css(node_name):
     """.replace("{node_name}", node_name)
 """Basic node display that is added to the default style.css"""
 
-class PortDirection(Enum):
-    INPUT=0
-    OUTPUT=1
 
-class PortPosition(Enum):
-    TOP=0
-    BOTTOM=1
-    RIGHT=2
-    LEFT=3
-
-class NodePort:
-    def __init__(self, 
-                    direction:PortDirection, 
-                    position:PortPosition, 
-                    name:str, 
-                    display_name:bool = False,
-                    offset:float = None):
-        """Node port class constructor : stores the information for each port of a node.
-
-        Parameters
-        ----------
-        direction : PortDirection
-            Whether the port represents an input or an output
-        position : PortPosition
-            Location of the port around the node : BOTTOM, TOP, LEFT or RIGHT
-        name : str
-            Port name
-        display_name : bool, optional
-            Display the port name on the node (only available for LEFT and RIGHT ports). Defaults to False., by default False
-        offset : float, optional
-            Port position offset to the top/left based on the position. If None, the port will be centered to the edge. Defaults to None, by default None
-        """        
-        assert not (display_name and position in [PortPosition.TOP, PortPosition.BOTTOM]), "Node port name can only be displayed if located on left or right."
-        assert not (display_name and offset is None), "Node port name can only be displayed if the port offset is provided."
-
-        self.direction:PortDirection = direction
-        """Whether the port represents an input or an output"""
-        self.position:PortPosition = position
-        """Location of the port around the node : BOTTOM, TOP, LEFT or RIGHT"""
-        self.name:str = name
-        """Port name"""
-        self.display_name:bool = display_name
-        """Display the port name on the node (only available for LEFT and RIGHT ports)"""
-        self.offset:float = offset
-        """Port position offset to the top/left based on the position. If None, the port will be centered to the edge."""
-
-
-
-class ReactFlowNode:
-    child:pn.viewable.Viewable = None
-    node_class_name = ""
-    ports:List[NodePort]
-    plugged_nodes:Dict[str, List['ReactFlowNode']]
-    name:str
-
-    def create(self, ):
-        raise NotImplementedError
-
-    def update(self, ):
-        raise NotImplementedError
-    
-    def set_watched_variables(self, funct:Callable):
-        raise NotImplementedError
-    
-    def get_node_json_value(self,):
-        raise NotImplementedError
-
-
-class NodeInstance:
-    def __init__(self, 
-                    name:str, 
-                    node:ReactFlowNode, 
-                    x:float, 
-                    y:float,):
-        """Node that is created when opening the app
-
-        Parameters
-        ----------
-        name : str
-            Node name
-        node_type : ReactFlowNode
-            Class of the node
-        x : float
-            Horizontal position in graph
-        y : float
-            Vertical position in graph
-        """
-        self.name = name
-        self.node = node
-        self.x = x
-        self.y = y
-
-class EdgeInstance:
-    def __init__(self, 
-                    source:str, 
-                    source_handle:str, 
-                    target:str, 
-                    target_handle:str,):
-        """Edge that is created when opening the app
-
-        Parameters
-        ----------
-        source : str
-            Source node name
-        source_handle : str
-            Source port name
-        target : str
-            Target node name
-        target_handle : str
-            Target port name
-        """
-        self.source = source
-        self.source_handle = source_handle
-        self.target = target
-        self.target_handle = target_handle
 
 class ReactFlow(ReactComponent):
 
@@ -241,6 +129,9 @@ class ReactFlow(ReactComponent):
                     for edge in initial_edges
                 ])
             ]
+        
+        self.old_nodes = {}
+        self.old_edges = {}
 
         self.param.watch(self.update_nodes, "nodes")
         self.param.watch(self.update_nodes, "edges")
@@ -249,6 +140,7 @@ class ReactFlow(ReactComponent):
          self._send_event(ESMEvent, data=f"{node_name}@{parameter_name}@{parameter_value}")
 
     def _handle_msg(self, data:str):
+        print("Received message : ", data)
         if data.startswith("NEW_NODE"):
             _, node_id, node_type = data.split(":")
 
@@ -259,7 +151,6 @@ class ReactFlow(ReactComponent):
 
                     node = c()
                     node.name = f"{node_id}"
-                    node.set_watched_variables(self.update_nodes)
                     new_item = node.create()
                     
                     self.nodes_instances.append(node)
@@ -268,7 +159,8 @@ class ReactFlow(ReactComponent):
                     self.item_names = self.item_names + [node_id]
                     self.item_ports = self.item_ports + [[[p.direction.value, p.position.value, p.name, p.display_name, p.offset] for p in c.ports]]
 
-        print("Received message :", data, )
+                    node.update()
+                    
 
     def print_state(self, _=None):
         print("\n\nPrinting nodes")
@@ -283,16 +175,40 @@ class ReactFlow(ReactComponent):
         self.nodes = [e for e in self.nodes]
         self.edges = [e for e in self.edges]
             
-    def update_nodes(self, _):
-        print("Updating nodes")
-        self.build_node_tree()
+    def update_nodes(self, _:param.parameterized.Event):
+        print(_.count, _.index, _.name, _.obj, _.what)
 
-        self.nodes_instances = [node for node in self.nodes_instances if node.name in list(n["id"] for n in self.nodes)]
+        node_dict = {n["id"]: n for n in self.nodes}
+        edge_dict = {e["id"]: e for e in self.edges}
 
-        for node in self.nodes_instances:
-            node.update()
+        node_changes = self._check_node_change(node_dict)
+        edge_changes = self._check_edge_change(edge_dict)
+        
+        if len([nc for nc in node_changes if type(nc) in [NodeCreation, NodeDeletion]]) > 0:
+            self.build_node_tree()
 
-        self.print_state()
+            self.nodes_instances = [node for node in self.nodes_instances if node.name in list(n["id"] for n in self.nodes)]
+
+        for node_change in node_changes:
+            if isinstance(node_changes, NodeCreation):
+                self.nodes_instances[self.item_names.index(node_change)].update(None)
+            elif isinstance(node_changes, NodeMove):
+                self.nodes_instances[self.item_names.index(node_change)].on_node_move(node_change)
+            elif isinstance(node_changes, NodeSelected):
+                self.nodes_instances[self.item_names.index(node_change)].on_node_selected()
+            elif isinstance(node_changes, NodeDeselected):
+                self.nodes_instances[self.item_names.index(node_change)].on_node_deselected()
+
+        for edge_change in edge_changes:
+            if isinstance(edge_change, EdgeCreation):
+                self.build_node_tree()
+                self.nodes_instances[self.item_names.index(edge_change.target)].update(None)
+            elif isinstance(edge_change, EdgeDeletion):
+                self.build_node_tree()
+                self.nodes_instances[self.item_names.index(edge_change.target)].update(None)
+
+        self.old_nodes = node_dict
+        self.old_edges = edge_dict
          
     def build_node_tree(self,):
         for node in self.nodes_instances:
@@ -318,6 +234,61 @@ class ReactFlow(ReactComponent):
 
         self._send_event(ESMEvent, data=f"NodeCreation@{node.name}@{node.x}@{node.y}@{node.node.node_class_name}")
 
+    def _check_node_change(self, new_node_dict:Dict[str, Any]):
+        node_changes:List[NodeChange] = []
+        for node in new_node_dict:
+            if not node in self.old_nodes:
+                node_changes.append(NodeCreation(node))
+
+        for node in self.old_nodes:
+            if node in new_node_dict:
+                new = new_node_dict[node]
+                old = self.old_nodes[node]
+
+                if old["position"]["x"] != new["position"]["x"] or\
+                        old["position"]["y"] != new["position"]["y"]:
+                    node_changes.append(NodeMove(node, new["position"]["x"], new["position"]["y"], old["position"]["x"], old["position"]["y"]))
+                if "selected" in new:
+                    if new["selected"]:
+                        if (not "selected" in old) or not old["selected"]:
+                            node_changes.append(NodeSelected(node))
+                    else:
+                        if "selected" in old and old["selected"]:
+                            node_changes.append(NodeDeselected(node))
+
+            else:
+                node_changes.append(NodeDeletion(node))
+        
+        return node_changes
+
+    def _check_edge_change(self, new_edge_dict:Dict[str, Any]):
+        edge_changes:List[NodeChange] = []
+
+        for edge in new_edge_dict:
+            if not edge in self.old_edges:
+                e = new_edge_dict[edge]
+                edge_changes.append(EdgeCreation(e["source"], e["sourceHandle"], e["target"], e["targetHandle"]))
+
+        for edge in self.old_edges:
+            if edge in new_edge_dict:
+                new = new_edge_dict[edge]
+                old = self.old_edges[edge]
+
+                if "selected" in new:
+                    if new["selected"]:
+                        if (not "selected" in old) or not old["selected"]:
+                            edge_changes.append(EdgeSelected(old["source"], old["sourceHandle"], old["target"], old["targetHandle"]))
+                    else:
+                        if "selected" in old and old["selected"]:
+                            edge_changes.append(EdgeDeselected(old["source"], old["sourceHandle"], old["target"], old["targetHandle"]))
+
+            else:
+                e = self.old_edges[edge]
+                edge_changes.append(EdgeDeletion(e["source"], e["sourceHandle"], e["target"], e["targetHandle"]))
+        
+        return edge_changes
+        
+
 if __name__ == "__main__":
     class FloatInputNode(ReactFlowNode):
         child:pn.viewable.Viewable = None
@@ -326,6 +297,8 @@ if __name__ == "__main__":
 
         def __init__(self, ):
             self.float_input = pn.widgets.FloatInput(value=0., width=100)
+            
+            self.float_input.param.watch(self.update, "value")
 
         def create(self, ):
             return pn.layout.Column(
@@ -334,11 +307,8 @@ if __name__ == "__main__":
                                         align="center"
                                     )
         
-        def update(self,):
-            pass
-
-        def set_watched_variables(self, funct:Callable):
-            self.float_input.param.watch(funct, "value")
+        def update(self, _):
+            super().update(_)
 
         def get_node_json_value(self):
             return {"value" : self.float_input.value}
@@ -358,7 +328,7 @@ if __name__ == "__main__":
                                         align="center"
                                     )
         
-        def update(self,):
+        def update(self, _):
             value = 0
 
             if len(self.plugged_nodes["input"]) == 0:
@@ -368,9 +338,7 @@ if __name__ == "__main__":
                     value += float_input.get_node_json_value()["value"]
 
                 self.result_label.object = f"Addition result : {round(value, 1)}"
-
-        def set_watched_variables(self, funct:Callable):
-            pass
+            super().update(_)
 
         def get_node_json_value(self):
             return {"value" : self.result_label.object}

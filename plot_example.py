@@ -33,12 +33,13 @@ df = pd.DataFrame({
     Nodes definition
 """
 class TextInputNode(ReactFlowNode):
-    child:pn.viewable.Viewable = None
-    node_class_name = "Text Input"
-    ports:List[NodePort] = [NodePort(direction=PortDirection.OUTPUT, position=PortPosition.BOTTOM, name="Output")]
-
     def __init__(self, ):
+        super().__init__()
+        self.node_class_name = "Text Input"
+        self.ports:List[NodePort] = [NodePort(direction=PortDirection.OUTPUT, position=PortPosition.BOTTOM, name="Output")]
         self.text_input = pn.widgets.TextInput(value="", width=100)
+
+        self.text_input.param.watch(self.update, "value")
 
     def create(self, ):
         return pn.layout.Column(
@@ -47,11 +48,8 @@ class TextInputNode(ReactFlowNode):
                                     align="center"
                                 )
     
-    def update(self,):
-        pass
-
-    def set_watched_variables(self, funct:Callable):
-        self.text_input.param.watch(funct, "value")
+    def update(self, _):
+        super().update(_)
 
     def get_node_json_value(self):
         return {"value" : self.text_input.value}
@@ -67,6 +65,7 @@ class InputDataFrameNode(ReactFlowNode):
                                         offset=35)]
 
     def __init__(self):
+        super().__init__()
         self.df = df
 
     def create(self, ):
@@ -76,11 +75,9 @@ class InputDataFrameNode(ReactFlowNode):
                                     align="center"
                                 )
     
-    def update(self,):
-        pass
-
-    def set_watched_variables(self, funct:Callable):
-        pass
+    def update(self, _):
+        print("Updating dataframe")
+        super().update(_)
 
     def get_node_json_value(self):
         return {"dataframe" : self.df}
@@ -96,8 +93,11 @@ class ColumnSelectNode(ReactFlowNode):
         ]
 
     def __init__(self):
+        super().__init__()
         self.df_columns = pn.widgets.Select(options=[], width=100)
         self.column_value = pd.DataFrame()
+        
+        self.df_columns.param.watch(self.update, "value")
 
     def create(self, ):
         return pn.layout.Column(
@@ -106,18 +106,19 @@ class ColumnSelectNode(ReactFlowNode):
                                     align="center"
                                 )
     
-    def update(self,):
-        if len(self.plugged_nodes["DataFrame"]) == 0:
-            self.df_columns.options = []
-            self.column_value = []
-        else:
-            self.df_columns.options = list(self.plugged_nodes["DataFrame"][0].get_node_json_value()["dataframe"].columns)
+    def update(self, _):
+        print("Updating selector")
+        
+        if "DataFrame" in self.plugged_nodes:
+            if len(self.plugged_nodes["DataFrame"]) == 0:
+                self.df_columns.options = []
+                self.column_value = []
+            else:
+                self.df_columns.options = list(self.plugged_nodes["DataFrame"][0].get_node_json_value()["dataframe"].columns)
 
-            if self.df_columns.value in self.df_columns.options:
-                self.column_value = list(self.plugged_nodes["DataFrame"][0].get_node_json_value()["dataframe"][self.df_columns.value])
-
-    def set_watched_variables(self, funct:Callable):
-        self.df_columns.param.watch(funct, "value")
+                if self.df_columns.value in self.df_columns.options:
+                    self.column_value = list(self.plugged_nodes["DataFrame"][0].get_node_json_value()["dataframe"][self.df_columns.value])
+        super().update(_)
 
     def get_node_json_value(self):
         return {"value" : self.column_value, "name":self.df_columns.value}
@@ -133,6 +134,7 @@ class BokehPlotNode(ReactFlowNode):
         ]
 
     def __init__(self):
+        super().__init__()
         self.plot:pn.pane.Bokeh = bokeh_plot
         self.display_legend = pn.widgets.Checkbox(name="Display legend", value=True)
 
@@ -147,7 +149,7 @@ class BokehPlotNode(ReactFlowNode):
     async def replace_figure(self,):
         self.plot.object = self.figure
 
-    def update(self,):
+    def update(self, _):
         print("Updating plot...")
         self.figure = figure(width=500, height=500)
 
@@ -172,8 +174,7 @@ class BokehPlotNode(ReactFlowNode):
 
         pn.state.curdoc.add_next_tick_callback(self.replace_figure)
 
-    def set_watched_variables(self, funct:Callable):
-        pass
+        super().update(_)
 
     def get_node_json_value(self):
         return {}

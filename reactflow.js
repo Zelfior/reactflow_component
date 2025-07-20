@@ -325,7 +325,6 @@ const DnDFlow = () => {
 
         if (new_edge.length !== 0) {
             py_setEdges(new_edge);
-            model.send_msg('Edge Change');
         }
     };
 
