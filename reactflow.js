@@ -97,62 +97,62 @@ function Sidebar() {
  */
 const positions = [Position.Top, Position.Bottom, Position.Right, Position.Left];
 function renderPortsNames(ports) {
-  const maxOffset =
-    ports && ports.length > 0
-      ? Math.max(
-          ...ports.map(([,, , display_name, offset]) =>
-            display_name && offset !== undefined ? offset : 0
-          )
-        ) + 20 // estimated height
-      : 0;
+    const maxOffset =
+        ports && ports.length > 0
+            ? Math.max(
+                ...ports.map(([, , , display_name, offset]) =>
+                    display_name && offset !== undefined ? offset : 0
+                )
+            ) + 20 // estimated height
+            : 0;
 
-  return (
-    <div
-      style={{
-        position: 'relative',
-        top: '-20px',
-        minHeight: `${maxOffset}px`,
-        width: 'max-content',
-      }}
-    >
-      {/* Invisible block to preserve width */}
-      <div style={{ visibility: 'hidden', position: 'relative' }}>
-        {ports &&
-          ports.map(([,, name, display_name]) =>
-            display_name ? <div key={name}>{name}</div> : null
-          )}
-      </div>
+    return (
+        <div
+            style={{
+                position: 'relative',
+                top: '-20px',
+                minHeight: `${maxOffset}px`,
+                width: 'max-content',
+            }}
+        >
+            {/* Invisible block to preserve width */}
+            <div style={{ visibility: 'hidden', position: 'relative' }}>
+                {ports &&
+                    ports.map(([, , name, display_name]) =>
+                        display_name ? <div key={name}>{name}</div> : null
+                    )}
+            </div>
 
-      {/* Absolutely positioned spans */}
-      {ports &&
-        ports.map((handle, index) => {
-          const [,, name, display_name, offset] = handle;
+            {/* Absolutely positioned spans */}
+            {ports &&
+                ports.map((handle, index) => {
+                    const [, , name, display_name, offset] = handle;
 
-          if (!display_name) return null;
+                    if (!display_name) return null;
 
-          const spanStyle =
-            offset !== undefined
-              ? {
-                  position: 'absolute',
-                  top: `${offset}px`,
-                  left: 0,
-                  whiteSpace: 'nowrap',
-                }
-              : {
-                  position: 'absolute',
-                  top: `${maxOffset*0.5}px`,
-                  left: 0,
-                  whiteSpace: 'nowrap'
-                };
+                    const spanStyle =
+                        offset !== undefined
+                            ? {
+                                position: 'absolute',
+                                top: `${offset}px`,
+                                left: 0,
+                                whiteSpace: 'nowrap',
+                            }
+                            : {
+                                position: 'absolute',
+                                top: `${maxOffset * 0.5}px`,
+                                left: 0,
+                                whiteSpace: 'nowrap'
+                            };
 
-          return (
-            <span key={name} style={spanStyle}>
-              {name}
-            </span>
-          );
-        })}
-    </div>
-  );
+                    return (
+                        <span key={name} style={spanStyle}>
+                            {name}
+                        </span>
+                    );
+                })}
+        </div>
+    );
 }
 
 function renderHandles(ports, origin) {
@@ -163,24 +163,24 @@ function renderHandles(ports, origin) {
 
         if (offset !== undefined) {
             return (
-            <Handle
-                key={index}
-                type={type}
-                position={position}
-                id={name}
-                title={name}
-                style={{ [origin]: offset }}
-            />
+                <Handle
+                    key={index}
+                    type={type}
+                    position={position}
+                    id={name}
+                    title={name}
+                    style={{ [origin]: offset }}
+                />
             );
         } else {
             return (
-            <Handle
-                key={index}
-                type={type}
-                position={position}
-                id={name}
-                title={name}
-            />
+                <Handle
+                    key={index}
+                    type={type}
+                    position={position}
+                    id={name}
+                    title={name}
+                />
             );
         }
     });
@@ -191,15 +191,14 @@ function PanelWidgetNode({ id, data }) {
     const updateNodeInternals = useUpdateNodeInternals();
 
     let children = model.get_child("items");
-    let [ports_list, setPortsList] = model.useState("item_ports");
+    let [children_name, ]  = model.useState("item_names");
+    let [ports_list, ] = model.useState("item_ports");
 
     let child;
     let ports;
 
-    const self_num = parseInt(id.replace('dndnode_', ''), 10);
-
     for (let index = 0; index < children.length; index++) {
-        if (self_num == index) {
+        if (id == children_name[index]) {
             child = children[index];
             ports = ports_list[index];
             break;
@@ -232,7 +231,7 @@ function PanelWidgetNode({ id, data }) {
 
                 {/* HTML element with all port names, one after the other */}
                 {renderPortsNames(leftPorts)}
-                    
+
                 {/* Display of Handle components */}
                 {renderHandles(leftPorts, "top")}
             </div>
@@ -249,26 +248,13 @@ function PanelWidgetNode({ id, data }) {
 
                 {/* HTML element with all port names, one after the other */}
                 {renderPortsNames(rightPorts)}
-                
+
                 {/* Display of Handle components */}
                 {renderHandles(rightPorts, "top")}
             </div>
         </div>
     );
 }
-
-/**
- * 
- *  Initial state definition
- * 
- * 
- */
-const initialNodes = [
-];
-
-const initialEdges = [
-];
-
 
 
 /**
@@ -292,8 +278,20 @@ const DnDFlow = () => {
     const [py_nodes, py_setNodes] = model.useState('nodes');
     const [py_edges, py_setEdges] = model.useState('edges');
 
-    const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-    const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+    const [py_initial_nodes, ] = model.useState('initial_nodes');
+    const parsed_initial_nodes = JSON.parse(py_initial_nodes.toString()
+                                                .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":')  // fix keys
+                                                .replace(/'/g, '"') // convert single to double quotes);
+                                            ); 
+                                            
+    const [py_initial_edges, ] = model.useState('initial_edges');
+    const parsed_initial_edges = JSON.parse(py_initial_edges.toString()
+                                                .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":')  // fix keys
+                                                .replace(/'/g, '"') // convert single to double quotes);
+                                            ); 
+
+    const [nodes, setNodes, onNodesChange] = useNodesState(parsed_initial_nodes);
+    const [edges, setEdges, onEdgesChange] = useEdgesState(parsed_initial_edges);
 
     const { screenToFlowPosition } = useReactFlow();
     const [type] = useDnD();
@@ -393,6 +391,30 @@ const DnDFlow = () => {
     };
 
     const nodeTypes = useMemo(() => getNodeTypes(onMyTrigger), [onMyTrigger]);
+
+    // Functions to create nodes and edges from python
+    function receiveMessage(msg) {
+        console.log("Received message ", msg)
+        let action = msg.split("@")[0];
+
+        if (action == "NodeCreation") {
+            const [, node_id, x, y, node_class_name] = msg.split("@");
+            const newNode = {
+                id: node_id,
+                type: 'panelWidget',
+                position: {x, y},
+                data: { label: node_class_name},
+            };
+
+            setNodes((nds) => nds.concat(newNode));
+        }
+    }
+    // Receive message from panel
+    model.on('msg:custom', (msg) => {
+        receiveMessage(msg)
+    })
+
+
     return (
         <div className="dndflow" style={{ display: 'flex', width: '100%', height: '100%' }}>
             <div className="reactflow-wrapper" ref={reactFlowWrapper}>

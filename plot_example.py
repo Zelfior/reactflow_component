@@ -8,7 +8,7 @@ import math
 from bokeh.plotting import figure
 from bokeh.io import curdoc
 
-from reactflow import ReactFlow, ReactFlowNode, NodePort, PortDirection, PortPosition
+from reactflow import EdgeInstance, NodeInstance, ReactFlow, ReactFlowNode, NodePort, PortDirection, PortPosition
 
 
 """
@@ -35,7 +35,7 @@ df = pd.DataFrame({
 class TextInputNode(ReactFlowNode):
     child:pn.viewable.Viewable = None
     node_class_name = "Text Input"
-    ports:List[NodePort] = [NodePort(direction=PortDirection.OUTPUT, position=PortPosition.BOTTOM, name="output")]
+    ports:List[NodePort] = [NodePort(direction=PortDirection.OUTPUT, position=PortPosition.BOTTOM, name="Output")]
 
     def __init__(self, ):
         self.text_input = pn.widgets.TextInput(value="", width=100)
@@ -155,19 +155,20 @@ class BokehPlotNode(ReactFlowNode):
             x=list(range(len(input_.get_node_json_value()["value"])))
             y= list(input_.get_node_json_value()["value"])
 
-            label = None
-            if self.display_legend.value and "name" in input_.get_node_json_value():
+            if self.display_legend.value and\
+                  "name" in input_.get_node_json_value() and\
+                  isinstance(input_.get_node_json_value()["name"], str):
                 label = input_.get_node_json_value()["name"]
 
-            self.figure.line(x=x, y=y, legend_label = label)
+                self.figure.line(x=x, y=y, legend_label = label)
+            else:
+                self.figure.line(x=x, y=y)
 
         if len(self.plugged_nodes["Title"]) != 0:
             title = self.plugged_nodes["Title"][0].get_node_json_value()
 
             if "value" in title and isinstance(title["value"], str):
                 self.figure.title = title["value"]
-
-            self.figure.legend
 
         pn.state.curdoc.add_next_tick_callback(self.replace_figure)
 
@@ -183,6 +184,20 @@ class BokehPlotNode(ReactFlowNode):
 pn.Row(
         ReactFlow(
                     nodes_classes = [TextInputNode, InputDataFrameNode, ColumnSelectNode, BokehPlotNode], 
+                    initial_nodes = [
+                        NodeInstance("output", BokehPlotNode(), 725., 291.),
+                        NodeInstance("text_input", TextInputNode(), 585., 172.),
+                        NodeInstance("input_df", InputDataFrameNode(), 158., 295.),
+                        NodeInstance("column_select_0", ColumnSelectNode(), 416., 300.),
+                        NodeInstance("column_select_1", ColumnSelectNode(), 415., 389.)
+                    ],
+                    initial_edges=[
+                        EdgeInstance("input_df", "Output", 'column_select_0', "DataFrame"),
+                        EdgeInstance("input_df", "Output", 'column_select_1', "DataFrame"),
+                        EdgeInstance('column_select_0', "Output", "output", "Input"),
+                        EdgeInstance('column_select_1', "Output", "output", "Input"),
+                        EdgeInstance('text_input', "Output", "output", "Title"),
+                    ]
                   ),
         bokeh_plot,
         sizing_mode = "stretch_both"

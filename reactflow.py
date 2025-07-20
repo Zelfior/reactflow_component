@@ -119,13 +119,65 @@ class ReactFlowNode:
         raise NotImplementedError
 
 
+class NodeInstance:
+    def __init__(self, 
+                    name:str, 
+                    node:ReactFlowNode, 
+                    x:float, 
+                    y:float,):
+        """Node that is created when opening the app
+
+        Parameters
+        ----------
+        name : str
+            Node name
+        node_type : ReactFlowNode
+            Class of the node
+        x : float
+            Horizontal position in graph
+        y : float
+            Vertical position in graph
+        """
+        self.name = name
+        self.node = node
+        self.x = x
+        self.y = y
+
+class EdgeInstance:
+    def __init__(self, 
+                    source:str, 
+                    source_handle:str, 
+                    target:str, 
+                    target_handle:str,):
+        """Edge that is created when opening the app
+
+        Parameters
+        ----------
+        source : str
+            Source node name
+        source_handle : str
+            Source port name
+        target : str
+            Target node name
+        target_handle : str
+            Target port name
+        """
+        self.source = source
+        self.source_handle = source_handle
+        self.target = target
+        self.target_handle = target_handle
+
 class ReactFlow(ReactComponent):
 
     edges = param.List()
     nodes = param.List()
     item_ports = param.List()
+    
+    initial_nodes = param.List()
+    initial_edges = param.List()
 
     items = Children()
+    item_names = param.List()
 
     nodes_classes: List[Type[ReactFlowNode]] = []
     nodes_instances: List[ReactFlowNode] = []
@@ -145,14 +197,50 @@ class ReactFlow(ReactComponent):
                         make_css("panelWidget"),
                         Path("dnd_flow.css"),
                     ]
+    
+    initial_nodes:str
 
     _esm = Path(__file__).parent / "reactflow.js"
 
-    def __init__(self, sizing_mode = "stretch_both", nodes_classes:List[Type[ReactFlowNode]] = [], **kwargs):
+    def __init__(self, 
+                    sizing_mode = "stretch_both", 
+                    nodes_classes:List[Type[ReactFlowNode]] = [], 
+                    initial_nodes:List[NodeInstance] = [],
+                    initial_edges:List[EdgeInstance] = [],
+                    **kwargs):
+        
         super().__init__(sizing_mode=sizing_mode, **kwargs)
 
         self.nodes_classes = nodes_classes
         self.node_class_labels = [c.node_class_name for c in self.nodes_classes]
+
+        for node in initial_nodes:
+            self.add_node(node)
+
+        self.initial_nodes += [
+                str([
+                    {
+                        "id":node.name,
+                        "type":'panelWidget',
+                        "position":{"x":node.x,"y":node.y},
+                        "data":{"label":node.node.node_class_name}
+                    }
+                    for node in initial_nodes
+                ])
+            ]
+
+        self.initial_edges += [
+                str([
+                    {
+                        "source": edge.source,
+                        "sourceHandle": edge.source_handle,
+                        "target": edge.target,
+                        "targetHandle": edge.target_handle,
+                        "id": "_".join([edge.source, edge.source_handle, edge.target, edge.target_handle]),
+                    }
+                    for edge in initial_edges
+                ])
+            ]
 
         self.param.watch(self.update_nodes, "nodes")
         self.param.watch(self.update_nodes, "edges")
@@ -177,6 +265,7 @@ class ReactFlow(ReactComponent):
                     self.nodes_instances.append(node)
                     
                     self.items = self.items + [new_item]
+                    self.item_names = self.item_names + [node_id]
                     self.item_ports = self.item_ports + [[[p.direction.value, p.position.value, p.name, p.display_name, p.offset] for p in c.ports]]
 
         print("Received message :", data, )
@@ -219,6 +308,15 @@ class ReactFlow(ReactComponent):
             source_node.plugged_nodes[source_port_name].append(target_node)
             target_node.plugged_nodes[target_port_name].append(source_node)
 
+    def add_node(self, node:NodeInstance):
+        node.node.name = node.name
+        self.nodes_instances.append(node.node)
+
+        self.items = self.items + [node.node.create()]
+        self.item_names = self.item_names + [node.node.name]
+        self.item_ports = self.item_ports + [[[p.direction.value, p.position.value, p.name, p.display_name, p.offset] for p in node.node.ports]]
+
+        self._send_event(ESMEvent, data=f"NodeCreation@{node.name}@{node.x}@{node.y}@{node.node.node_class_name}")
 
 if __name__ == "__main__":
     class FloatInputNode(ReactFlowNode):
