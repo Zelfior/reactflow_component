@@ -90,6 +90,11 @@ class ReactFlow(ReactComponent):
     """List of Viewables assiciated to each node."""
     item_names = param.List()
     """List of node names, in the same order as items."""
+    
+    display_side_bar = param.Boolean()
+    """Display the side bar to drag and drop new nodes."""
+    allow_edge_loops = param.Boolean()
+    """Allow to have edge loops in the graph (can lead to update infinite loops)."""
 
     nodes_classes: List[Type[ReactFlowNode]] = []
     """Provided nodes classes that are instanciated when a node is dragged from the sidebar."""
@@ -123,6 +128,8 @@ class ReactFlow(ReactComponent):
                     nodes_classes:List[Type[ReactFlowNode]] = [], 
                     initial_nodes:List[NodeInstance] = [],
                     initial_edges:List[EdgeInstance] = [],
+                    display_side_bar:bool = True,
+                    allow_edge_loops:bool = False,
                     **kwargs):
         """Node graph holoviz panel component
 
@@ -136,12 +143,19 @@ class ReactFlow(ReactComponent):
             List of edges in the graph at its creation, by default []
         sizing_mode : str, optional
             Sizing mod of the Viewable, default at stretch_both to prevent the graph to be of zero size, by default "stretch_both"
+        display_side_bar : bool, optional
+            Display the side bar to drag and drop new nodes, by default True
+        allow_edge_loops : bool, optional
+            Allow to have edge loops in the graph (can lead to update infinite loops), by default False
         """
         
         super().__init__(sizing_mode=sizing_mode, **kwargs)
 
         self.nodes_classes = nodes_classes
         self.node_class_labels = [c.node_class_name for c in self.nodes_classes]
+
+        self.display_side_bar = display_side_bar 
+        self.allow_edge_loops = allow_edge_loops 
 
         # Adding all nodes present in the initial nodes 
         for node in initial_nodes:
@@ -208,7 +222,7 @@ class ReactFlow(ReactComponent):
                     self.item_names = self.item_names + [node_id]
                     self.item_ports = self.item_ports + [[[p.direction.value, p.position.value, p.name, p.display_name, p.offset] for p in c.ports]]
 
-                    node.update()
+                    node.update(None)
                     
 
     def print_state(self, _=None):

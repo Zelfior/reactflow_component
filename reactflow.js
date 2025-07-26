@@ -12,7 +12,7 @@ import {
     HandleProps,
     NodeProps,
     getNodesBounds,
-  getOutgoers,
+    getOutgoers,
 } from 'reactflow';
 
 import { useRef, useCallback, createContext, useContext, useState, useMemo, forwardRef, HTMLAttributes, memo } from 'react';
@@ -192,8 +192,8 @@ function PanelWidgetNode({ id, data }) {
     const updateNodeInternals = useUpdateNodeInternals();
 
     let children = model.get_child("items");
-    let [children_name, ]  = model.useState("item_names");
-    let [ports_list, ] = model.useState("item_ports");
+    let [children_name,] = model.useState("item_names");
+    let [ports_list,] = model.useState("item_ports");
 
     let child;
     let ports;
@@ -279,17 +279,20 @@ const DnDFlow = () => {
     const [py_nodes, py_setNodes] = model.useState('nodes');
     const [py_edges, py_setEdges] = model.useState('edges');
 
-    const [py_initial_nodes, ] = model.useState('initial_nodes');
+    const [py_initial_nodes,] = model.useState('initial_nodes');
     const parsed_initial_nodes = JSON.parse(py_initial_nodes.toString()
-                                                .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":')  // fix keys
-                                                .replace(/'/g, '"') // convert single to double quotes);
-                                            ); 
-                                            
-    const [py_initial_edges, ] = model.useState('initial_edges');
+        .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":')  // fix keys
+        .replace(/'/g, '"') // convert single to double quotes);
+    );
+
+    const [py_initial_edges,] = model.useState('initial_edges');
     const parsed_initial_edges = JSON.parse(py_initial_edges.toString()
-                                                .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":')  // fix keys
-                                                .replace(/'/g, '"') // convert single to double quotes);
-                                            ); 
+        .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":')  // fix keys
+        .replace(/'/g, '"') // convert single to double quotes);
+    );
+    
+    const [allowEdgeLoops, ] = model.useState("allow_edge_loops");
+    const [displaySidebar, ] = model.useState("display_side_bar");
 
     const [nodes, setNodes, onNodesChange] = useNodesState(parsed_initial_nodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(parsed_initial_edges);
@@ -402,8 +405,8 @@ const DnDFlow = () => {
             const newNode = {
                 id: node_id,
                 type: 'panelWidget',
-                position: {x, y},
-                data: { label: node_class_name},
+                position: { x, y },
+                data: { label: node_class_name },
             };
 
             setNodes((nds) => nds.concat(newNode));
@@ -414,30 +417,32 @@ const DnDFlow = () => {
         receiveMessage(msg)
     })
 
-
-  const isValidConnection = useCallback(
+    const isValidConnection = useCallback(
         (connection) => {
-        // we are using getNodes and getEdges helpers here
-        // to make sure we create isValidConnection function only once
-        const nodes = getNodes();
-        const edges = getEdges();
-        const target = nodes.find((node) => node.id === connection.target);
-        const hasCycle = (node, visited = new Set()) => {
-            if (visited.has(node.id)) return false;
-    
-            visited.add(node.id);
-    
-            for (const outgoer of getOutgoers(node, nodes, edges)) {
-            if (outgoer.id === connection.source) return true;
-            if (hasCycle(outgoer, visited)) return true;
-            }
-        };
-    
-        if (target.id === connection.source) return false;
-        return !hasCycle(target);
+            if (allowEdgeLoops)
+                return true;
+            // we are using getNodes and getEdges helpers here
+            // to make sure we create isValidConnection function only once
+            const nodes = getNodes();
+            const edges = getEdges();
+            const target = nodes.find((node) => node.id === connection.target);
+            const hasCycle = (node, visited = new Set()) => {
+                if (visited.has(node.id)) return false;
+
+                visited.add(node.id);
+
+                for (const outgoer of getOutgoers(node, nodes, edges)) {
+                    if (outgoer.id === connection.source) return true;
+                    if (hasCycle(outgoer, visited)) return true;
+                }
+            };
+
+            if (target.id === connection.source) return false;
+            return !hasCycle(target);
         },
         [getNodes, getEdges],
     );
+
 
     return (
         <div className="dndflow" style={{ display: 'flex', width: '100%', height: '100%' }}>
@@ -460,7 +465,7 @@ const DnDFlow = () => {
                     <Background variant="dots" gap={12} size={1} />
                 </ReactFlow>
             </div>
-            <Sidebar />
+            {displaySidebar && <Sidebar />}
         </div>
     );
 };
