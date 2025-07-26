@@ -9,6 +9,7 @@ from bokeh.plotting import figure
 from bokeh.io import curdoc
 
 from reactflow import EdgeInstance, NodeInstance, ReactFlow, ReactFlowNode, NodePort, PortDirection, PortPosition
+from reactflow_api import PortRestriction
 
 
 """
@@ -27,14 +28,16 @@ df = pd.DataFrame({
     "atan": [math.atan(t/10) for t in range(50)],
 })
 
-
+string_restriction = PortRestriction("string", "#FF8D00")
+dataframe_restriction = PortRestriction("dataframe", "#4400FF")
+column_restriction = PortRestriction("column", "#008035")
 
 """
     Nodes definition
 """
 class TextInputNode(ReactFlowNode):
     node_class_name = "Text Input"
-    ports:List[NodePort] = [NodePort(direction=PortDirection.OUTPUT, position=PortPosition.BOTTOM, name="Output")]
+    ports:List[NodePort] = [NodePort(direction=PortDirection.OUTPUT, position=PortPosition.BOTTOM, name="Output", restriction=string_restriction)]
 
     def __init__(self, ):
         super().__init__()
@@ -62,7 +65,8 @@ class InputDataFrameNode(ReactFlowNode):
                                         position=PortPosition.RIGHT, 
                                         name="Output", 
                                         display_name=True, 
-                                        offset=35)]
+                                        offset=35,
+                                        restriction=dataframe_restriction)]
 
     def __init__(self):
         super().__init__()
@@ -87,8 +91,8 @@ class ColumnSelectNode(ReactFlowNode):
     node_class_name = "Column select"
 
     ports:List[NodePort] = [
-            NodePort(direction=PortDirection.INPUT, position=PortPosition.LEFT, name="DataFrame", offset=30, display_name=True),
-            NodePort(direction=PortDirection.OUTPUT, position=PortPosition.RIGHT, name="Output", offset=30, display_name=True)
+            NodePort(direction=PortDirection.INPUT, position=PortPosition.LEFT, name="DataFrame", offset=30, display_name=True, restriction=dataframe_restriction),
+            NodePort(direction=PortDirection.OUTPUT, position=PortPosition.RIGHT, name="Output", offset=30, display_name=True, restriction=column_restriction)
         ]
 
     def __init__(self):
@@ -127,8 +131,8 @@ class ColumnSelectNode(ReactFlowNode):
 class BokehPlotNode(ReactFlowNode):
     node_class_name = "Bokeh plot"
     ports:List[NodePort] = [
-            NodePort(direction=PortDirection.INPUT, position=PortPosition.LEFT, name="Title", offset=20, display_name=True, connection_count_limit=1),
-            NodePort(direction=PortDirection.INPUT, position=PortPosition.LEFT, name="Input", offset=40, display_name=True),
+            NodePort(direction=PortDirection.INPUT, position=PortPosition.LEFT, name="Title", offset=20, display_name=True, connection_count_limit=1, restriction=string_restriction),
+            NodePort(direction=PortDirection.INPUT, position=PortPosition.LEFT, name="Input", offset=40, display_name=True, restriction=column_restriction),
         ]
 
     def __init__(self):

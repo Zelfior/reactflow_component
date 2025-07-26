@@ -175,18 +175,13 @@ class ReactFlow(ReactComponent):
             ]
 
         # Creating the dictionnaries for ReactFlow from the EdgeInstance list
-        self.initial_edges += [
+        self.initial_edges += [ 
                 str([
-                    {
-                        "source": edge.source,
-                        "sourceHandle": edge.source_handle,
-                        "target": edge.target,
-                        "targetHandle": edge.target_handle,
-                        "id": "_".join([edge.source, edge.source_handle, edge.target, edge.target_handle]),
-                    }
+                    self._edge_to_string(edge)
                     for edge in initial_edges
                 ])
             ]
+        print(self.initial_edges)
         
         # These two dictionnaries will help understanding the node graph changes
         self.old_nodes = {}
@@ -195,6 +190,80 @@ class ReactFlow(ReactComponent):
         # Monitoring nodes and edges to trigger functions on graph change
         self.param.watch(self.update_nodes, "nodes")
         self.param.watch(self.update_nodes, "edges")
+
+    def _edge_to_string(self, edge:EdgeInstance):
+        """Checks the EdgeInstance and prepares the dictionnary understood by reactflow
+
+        Parameters
+        ----------
+        edge : EdgeInstance
+            Edge to add in the initial graph
+
+        Returns
+        -------
+        Dict[str, Any]
+            Edge property
+
+        Raises
+        ------
+        ValueError
+            Source or target node unknown
+        ValueError
+            Source or target handle not registered in the associated node
+        ValueError
+            Incompatible handles restrictions
+        """
+        source_node = [n for n in self.nodes_instances if n.name == edge.source]
+        target_node = [n for n in self.nodes_instances if n.name == edge.target]
+
+        if len(source_node) ==0:
+            raise ValueError(f"Provided EdgeInstance starts from a node {edge.source} that was not provided in the NodeInstance list.")
+        if len(target_node) ==0:
+            raise ValueError(f"Provided EdgeInstance ends at a node {edge.target} that was not provided in the NodeInstance list.")
+        
+        source_node = source_node[0]
+        target_node = target_node[0]
+
+        source_port = [p for p in source_node.ports if p.name == edge.source_handle]
+        target_port = [p for p in target_node.ports if p.name == edge.target_handle]
+
+        if len(source_port) ==0:
+            raise ValueError(f"Provided EdgeInstance starts from a port {edge.source_handle} at node {edge.source} that is not in the ports list.")
+        if len(target_port) ==0:
+            raise ValueError(f"Provided EdgeInstance ends at a port {edge.target_handle} at node {edge.target} that is not in the ports list.")
+        
+        source_port = source_port[0]
+        target_port = target_port[0]
+
+        edge_dict = {
+            "source": edge.source,
+            "sourceHandle": edge.source_handle,
+            "target": edge.target,
+            "targetHandle": edge.target_handle,
+            "id": "_".join([edge.source, edge.source_handle, edge.target, edge.target_handle]),
+        }
+
+        if source_port.restriction is  None and target_port.restriction is not None:
+            raise ValueError("Tried plugging ports that have different restrictions, found:\n" \
+            f"Node {edge.source} - Port {edge.source_handle} : No restriction found\n" \
+            f"Node {edge.target} - Port {edge.target_handle} : Restriction {target_port.restriction.name}\n")
+        
+        if source_port.restriction is not None and target_port.restriction is None:
+            raise ValueError("Tried plugging ports that have different restrictions, found:\n" \
+            f"Node {edge.source} - Port {edge.source_handle} : Restriction {source_port.restriction.name}\n" \
+            f"Node {edge.target} - Port {edge.target_handle} : No restriction found\n")
+
+        if source_port.restriction is not None and \
+            target_port.restriction is not None and \
+            (not source_port.restriction.name == target_port.restriction.name):
+            raise ValueError("Tried plugging ports that have different restrictions, found:\n" \
+            f"Node {edge.source} - Port {edge.source_handle} : Restriction {source_port.restriction.name}\n" \
+            f"Node {edge.target} - Port {edge.target_handle} : Restriction {target_port.restriction.name}\n")
+
+        if source_port.restriction is not None:
+            edge_dict["style"] = {"stroke":source_port.restriction.color}
+
+        return edge_dict
 
     def _handle_msg(self, data:str):
         """Handle the message received from the ReactFlow JavaScript.
@@ -315,7 +384,17 @@ class ReactFlow(ReactComponent):
 
         self.items = self.items + [node.node.create()]
         self.item_names = self.item_names + [node.node.name]
-        self.item_ports = self.item_ports + [[[p.direction.value, p.position.value, p.name, p.display_name, p.offset, p.connection_count_limit] for p in node.node.ports]]
+        self.item_ports = self.item_ports + [[
+                                                [
+                                                    p.direction.value, 
+                                                    p.position.value, 
+                                                    p.name, 
+                                                    p.display_name, 
+                                                    p.offset, 
+                                                    p.connection_count_limit,
+                                                    p.restriction.name if p.restriction is not None else None,  
+                                                    p.restriction.color if p.restriction is not None else None,  
+                                                ] for p in node.node.ports]]
 
         self._send_event(ESMEvent, data=f"NodeCreation@{node.name}@{node.x}@{node.y}@{node.node.node_class_name}")
 

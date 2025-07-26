@@ -13,14 +13,8 @@ import {
     useReactFlow,
     Handle, 
     Position,
-    getConnectedEdges,
     useEdges,
-    useNodes
 } from 'reactflow';
-
-import * as myModule from 'reactflow';
-console.log("My module : ", myModule);
-
 import { useRef, useCallback, createContext, useContext, useState, useMemo, forwardRef, HTMLAttributes, memo } from 'react';
 
 // import {
@@ -103,7 +97,6 @@ function Sidebar() {
  * 
  * 
  */
-
 function countConnectedEdges(edges, currentPort) {
     // Initialize a counter for the number of connected edges
     let count = 0;
@@ -122,8 +115,6 @@ function countConnectedEdges(edges, currentPort) {
 const CustomRestrictiveHandle = (props) => {
     let edges=useEdges();
 
-    console.log(countConnectedEdges(edges, props), props.connectionCount, countConnectedEdges(edges, props) < props.connectionCount)
- 
   return (
     <Handle
       {...props}
@@ -200,12 +191,27 @@ function renderPortsNames(ports) {
 
 function renderHandles(ports, origin, id) {
     return ports && ports.map((handle, index) => {
-        let [typeValue, positionValue, name, display_name, offset, connectionCount] = handle;
+        let [typeValue, 
+                positionValue, 
+                name, 
+                display_name, 
+                offset, 
+                connectionCount,
+                restiction_name,
+                restriction_color] = handle;
         const type = typeValue === 0 ? 'target' : 'source';
         const position = positions[positionValue];
 
         if (connectionCount == undefined)
             connectionCount = 100
+        
+        let style={ 
+            background: restriction_color !== undefined ? restriction_color : '#000'
+        };
+
+        if (offset != undefined){
+            style[[origin]]=offset;
+        }
 
         let handleProperties = {
             key: index,
@@ -214,8 +220,9 @@ function renderHandles(ports, origin, id) {
             id: name,
             title: name,
             node_name:id,
-            ...(offset !== undefined && { style: { [origin]: offset } }),
-            connectionCount:connectionCount
+            style:style,
+            connectionCount:connectionCount,
+            restiction_name:restiction_name
         };
 
         return <CustomRestrictiveHandle {...handleProperties} />
@@ -304,6 +311,19 @@ const getNodeTypes = (onMyTrigger) => ({
     panelWidget: PanelWidgetNode,
 });
 
+function getPortDict(node_name, port_name, node_list, port_list){
+    let ports = port_list[node_list.indexOf(node_name)];
+    let foundPort;
+
+    ports.forEach(port => {
+        if (port[2] == port_name){
+            foundPort = port;
+        }
+    });
+
+    return foundPort;
+}
+
 let id = 0;
 const getId = () => `dndnode_${id++}`;
 
@@ -334,7 +354,7 @@ const DnDFlow = () => {
 
     const { screenToFlowPosition, getNodes, getEdges } = useReactFlow();
     const [type] = useDnD();
-
+    
 
     if (nodes !== py_nodes) {
         py_setNodes(nodes);
@@ -344,9 +364,20 @@ const DnDFlow = () => {
         py_setEdges(edges);
     }
 
+    let [item_names,] = model.useState("item_names");
+    let [ports_list,] = model.useState("item_ports");
+
     const onConnect = useCallback(
         (params) => {
-            setEdges((eds) => addEdge(params, eds));
+            let sourcePort = getPortDict(params["source"], params["sourceHandle"], item_names, ports_list);
+            let targetPort = getPortDict(params["target"], params["targetHandle"], item_names, ports_list);
+
+            ;
+            // Checking if the restriction name is the same
+            if (sourcePort[6] == targetPort[6]){
+                params["style"] = {stroke: targetPort[7]};
+                setEdges((eds) => addEdge(params, eds));
+            }
         },
         [setEdges, addEdge, edges]
     );

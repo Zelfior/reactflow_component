@@ -1,4 +1,5 @@
 
+from dataclasses import dataclass
 from enum import Enum
 import panel as pn
 from typing import Callable, Dict, List
@@ -15,6 +16,13 @@ class PortPosition(Enum):
     RIGHT=2
     LEFT=3
 
+@dataclass
+class PortRestriction:
+    name:str
+    """Name of the restriction type"""
+    color:str = "#000"
+    """HTML color code of the restriction"""
+
 class NodePort:
     def __init__(self, 
                     direction:PortDirection, 
@@ -22,7 +30,8 @@ class NodePort:
                     name:str, 
                     display_name:bool = False,
                     offset:float = None,
-                    connection_count_limit:int = None):
+                    connection_count_limit:int = None,
+                    restriction:PortRestriction = None):
         """Node port class constructor : stores the information for each port of a node.
 
         Parameters
@@ -39,6 +48,8 @@ class NodePort:
             Port position offset to the top/left based on the position. If None, the port will be centered to the edge. Defaults to None, by default None
         connection_count_limit : int, optional
             How many edges can be connected to the port. Defaults to None, by default None
+        restriction : PortRestriction, optional
+            Restriction of what can be plugged to the current port. Defaults to None, by default None
         """        
         assert not (display_name and position in [PortPosition.TOP, PortPosition.BOTTOM]), "Node port name can only be displayed if located on left or right."
         assert not (display_name and offset is None), "Node port name can only be displayed if the port offset is provided."
@@ -55,6 +66,8 @@ class NodePort:
         """Port position offset to the top/left based on the position. If None, the port will be centered to the edge."""
         self.connection_count_limit:int = connection_count_limit
         """How many edges can be connected to the port."""
+        self.restriction:PortRestriction = restriction
+        """Restriction of what can be plugged to the current port."""
 
 
 
