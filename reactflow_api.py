@@ -21,7 +21,8 @@ class NodePort:
                     position:PortPosition, 
                     name:str, 
                     display_name:bool = False,
-                    offset:float = None):
+                    offset:float = None,
+                    connection_count_limit:int = None):
         """Node port class constructor : stores the information for each port of a node.
 
         Parameters
@@ -36,6 +37,8 @@ class NodePort:
             Display the port name on the node (only available for LEFT and RIGHT ports). Defaults to False., by default False
         offset : float, optional
             Port position offset to the top/left based on the position. If None, the port will be centered to the edge. Defaults to None, by default None
+        connection_count_limit : int, optional
+            How many edges can be connected to the port. Defaults to None, by default None
         """        
         assert not (display_name and position in [PortPosition.TOP, PortPosition.BOTTOM]), "Node port name can only be displayed if located on left or right."
         assert not (display_name and offset is None), "Node port name can only be displayed if the port offset is provided."
@@ -50,6 +53,8 @@ class NodePort:
         """Display the port name on the node (only available for LEFT and RIGHT ports)"""
         self.offset:float = offset
         """Port position offset to the top/left based on the position. If None, the port will be centered to the edge."""
+        self.connection_count_limit:int = connection_count_limit
+        """How many edges can be connected to the port."""
 
 
 

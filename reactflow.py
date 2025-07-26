@@ -315,7 +315,7 @@ class ReactFlow(ReactComponent):
 
         self.items = self.items + [node.node.create()]
         self.item_names = self.item_names + [node.node.name]
-        self.item_ports = self.item_ports + [[[p.direction.value, p.position.value, p.name, p.display_name, p.offset] for p in node.node.ports]]
+        self.item_ports = self.item_ports + [[[p.direction.value, p.position.value, p.name, p.display_name, p.offset, p.connection_count_limit] for p in node.node.ports]]
 
         self._send_event(ESMEvent, data=f"NodeCreation@{node.name}@{node.x}@{node.y}@{node.node.node_class_name}")
 

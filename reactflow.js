@@ -9,14 +9,23 @@ import {
     addEdge,
     ReactFlowProvider,
     useUpdateNodeInternals,
-    HandleProps,
-    NodeProps,
-    getNodesBounds,
     getOutgoers,
+    useReactFlow,
+    Handle, 
+    Position,
+    getConnectedEdges,
+    useEdges,
+    useNodes
 } from 'reactflow';
 
+import * as myModule from 'reactflow';
+console.log("My module : ", myModule);
+
 import { useRef, useCallback, createContext, useContext, useState, useMemo, forwardRef, HTMLAttributes, memo } from 'react';
-import { Handle, Position, useReactFlow } from 'reactflow';
+
+// import {
+//     useNodeConnections ,
+// } from 'reactflow';
 
 // Create a context for the model
 const ModelContext = createContext(null);
@@ -88,7 +97,40 @@ function Sidebar() {
 }
 
 
+/**
+ * 
+ *  Restrictive handle
+ * 
+ * 
+ */
 
+function countConnectedEdges(edges, currentPort) {
+    // Initialize a counter for the number of connected edges
+    let count = 0;
+
+    // Iterate over each edge in the edges array
+    edges.forEach(edge => {
+        // Check if the edge's source and sourceHandle match the current port's id and type
+        if (edge.targetHandle === currentPort.id && edge.target == currentPort.node_name) {
+            count++;
+        }
+    });
+
+    // Return the count of connected edges
+    return count;
+}
+const CustomRestrictiveHandle = (props) => {
+    let edges=useEdges();
+
+    console.log(countConnectedEdges(edges, props), props.connectionCount, countConnectedEdges(edges, props) < props.connectionCount)
+ 
+  return (
+    <Handle
+      {...props}
+      isConnectable={countConnectedEdges(edges, props) < props.connectionCount}
+    />
+  );
+};
 
 /**
  * 
@@ -156,34 +198,27 @@ function renderPortsNames(ports) {
     );
 }
 
-function renderHandles(ports, origin) {
+function renderHandles(ports, origin, id) {
     return ports && ports.map((handle, index) => {
-        const [typeValue, positionValue, name, display_name, offset] = handle;
+        let [typeValue, positionValue, name, display_name, offset, connectionCount] = handle;
         const type = typeValue === 0 ? 'target' : 'source';
         const position = positions[positionValue];
 
-        if (offset !== undefined) {
-            return (
-                <Handle
-                    key={index}
-                    type={type}
-                    position={position}
-                    id={name}
-                    title={name}
-                    style={{ [origin]: offset }}
-                />
-            );
-        } else {
-            return (
-                <Handle
-                    key={index}
-                    type={type}
-                    position={position}
-                    id={name}
-                    title={name}
-                />
-            );
-        }
+        if (connectionCount == undefined)
+            connectionCount = 100
+
+        let handleProperties = {
+            key: index,
+            type: type,
+            position: position,
+            id: name,
+            title: name,
+            node_name:id,
+            ...(offset !== undefined && { style: { [origin]: offset } }),
+            connectionCount:connectionCount
+        };
+
+        return <CustomRestrictiveHandle {...handleProperties} />
     });
 }
 
@@ -234,13 +269,13 @@ function PanelWidgetNode({ id, data }) {
                 {renderPortsNames(leftPorts)}
 
                 {/* Display of Handle components */}
-                {renderHandles(leftPorts, "top")}
+                {renderHandles(leftPorts, "top", id)}
             </div>
 
             <div style={gridItemStyle}>
                 {/* Display of the top/bottom ports and actual panel element (child) */}
 
-                {renderHandles((topPorts || []).concat(bottomPorts || []), "left")}
+                {renderHandles((topPorts || []).concat(bottomPorts || []), "left", id)}
                 {child}
             </div>
 
@@ -251,7 +286,7 @@ function PanelWidgetNode({ id, data }) {
                 {renderPortsNames(rightPorts)}
 
                 {/* Display of Handle components */}
-                {renderHandles(rightPorts, "top")}
+                {renderHandles(rightPorts, "top", id)}
             </div>
         </div>
     );

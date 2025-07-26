@@ -33,10 +33,11 @@ df = pd.DataFrame({
     Nodes definition
 """
 class TextInputNode(ReactFlowNode):
+    node_class_name = "Text Input"
+    ports:List[NodePort] = [NodePort(direction=PortDirection.OUTPUT, position=PortPosition.BOTTOM, name="Output")]
+
     def __init__(self, ):
         super().__init__()
-        self.node_class_name = "Text Input"
-        self.ports:List[NodePort] = [NodePort(direction=PortDirection.OUTPUT, position=PortPosition.BOTTOM, name="Output")]
         self.text_input = pn.widgets.TextInput(value="", width=100)
 
         self.text_input.param.watch(self.update, "value")
@@ -126,7 +127,7 @@ class ColumnSelectNode(ReactFlowNode):
 class BokehPlotNode(ReactFlowNode):
     node_class_name = "Bokeh plot"
     ports:List[NodePort] = [
-            NodePort(direction=PortDirection.INPUT, position=PortPosition.LEFT, name="Title", offset=20, display_name=True),
+            NodePort(direction=PortDirection.INPUT, position=PortPosition.LEFT, name="Title", offset=20, display_name=True, connection_count_limit=1),
             NodePort(direction=PortDirection.INPUT, position=PortPosition.LEFT, name="Input", offset=40, display_name=True),
         ]
 
@@ -195,7 +196,7 @@ pn.Row(
                         EdgeInstance('column_select_0', "Output", "output", "Input"),
                         EdgeInstance('column_select_1', "Output", "output", "Input"),
                         EdgeInstance('text_input', "Output", "output", "Title"),
-                    ]
+                    ],
                   ),
         bokeh_plot,
         sizing_mode = "stretch_both"
