@@ -56,7 +56,6 @@ class TextInputNode(ReactFlowNode):
 
 
 class InputDataFrameNode(ReactFlowNode):
-    child:pn.viewable.Viewable = None
     node_class_name = "Input DataFrame"
     ports:List[NodePort] = [NodePort(direction=PortDirection.OUTPUT, 
                                         position=PortPosition.RIGHT, 
@@ -84,7 +83,6 @@ class InputDataFrameNode(ReactFlowNode):
 
 
 class ColumnSelectNode(ReactFlowNode):
-    child:pn.viewable.Viewable = None
     node_class_name = "Column select"
 
     ports:List[NodePort] = [
@@ -126,7 +124,6 @@ class ColumnSelectNode(ReactFlowNode):
 
 
 class BokehPlotNode(ReactFlowNode):
-    child:pn.viewable.Viewable = None
     node_class_name = "Bokeh plot"
     ports:List[NodePort] = [
             NodePort(direction=PortDirection.INPUT, position=PortPosition.LEFT, name="Title", offset=20, display_name=True),
