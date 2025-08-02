@@ -203,7 +203,7 @@ function renderHandles(ports, origin, id) {
         const position = positions[positionValue];
 
         if (connectionCount == undefined)
-            connectionCount = 100
+            connectionCount = 10000;
         
         let style={ 
             background: restriction_color !== undefined ? restriction_color : '#000'
@@ -211,6 +211,10 @@ function renderHandles(ports, origin, id) {
 
         if (offset != undefined){
             style[[origin]]=offset;
+        }
+
+        if (typeof(restiction_name)==="undefined"){
+            restiction_name = "default";
         }
 
         let handleProperties = {
@@ -372,14 +376,13 @@ const DnDFlow = () => {
             let sourcePort = getPortDict(params["source"], params["sourceHandle"], item_names, ports_list);
             let targetPort = getPortDict(params["target"], params["targetHandle"], item_names, ports_list);
 
-            ;
             // Checking if the restriction name is the same
             if (sourcePort[6] == targetPort[6]){
                 params["style"] = {stroke: targetPort[7]};
                 setEdges((eds) => addEdge(params, eds));
             }
         },
-        [setEdges, addEdge, edges]
+        [setEdges, addEdge, edges, item_names, ports_list]
     );
 
     const onEdgesChangeHandler = (changes) => {
@@ -416,9 +419,6 @@ const DnDFlow = () => {
 
     const onMyTrigger = useCallback((new_nodes) => {
         console.log("New nodes my trigger", new_nodes);
-
-        // py_setNodes(new_nodes);
-        // model.send_msg('Node Change from my trigger');
     }, [model]);
 
     const onDragOver = useCallback((event) => {
@@ -446,7 +446,7 @@ const DnDFlow = () => {
                 data: { label: `${type} node` },
             };
 
-            model.send_msg("NEW_NODE:" + newNode.id + ":" + type.toString());
+            model.send_msg("NEW_NODE:" + newNode.id + ":" + type.toString()+":"+newNode.position.x.toString()+":"+newNode.position.y.toString());
 
             setNodes((nds) => nds.concat(newNode));
         },

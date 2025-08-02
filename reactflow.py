@@ -116,7 +116,7 @@ class ReactFlow(ReactComponent):
                         make_css("dndnode"),
                         make_css("input"),
                         make_css("panelWidget"),
-                        Path("dnd_flow.css"),
+                        Path(Path(__file__).parent / "dnd_flow.css"),
                     ]
     """CSS elements to customize the graph appearance"""
     
@@ -181,7 +181,6 @@ class ReactFlow(ReactComponent):
                     for edge in initial_edges
                 ])
             ]
-        print(self.initial_edges)
         
         # These two dictionnaries will help understanding the node graph changes
         self.old_nodes = {}
@@ -274,23 +273,31 @@ class ReactFlow(ReactComponent):
             Message content
         """
         if data.startswith("NEW_NODE"):
-            _, node_id, node_type = data.split(":")
+            _, node_id, node_type, x, y = data.split(":")
 
-            new_item = None
             for c in self.nodes_classes:
                 if c.node_class_name == node_type:
                     print(f"Creating node of type {node_type}")
 
                     node = c()
                     node.name = f"{node_id}"
-                    new_item = node.create()
                     
                     self.nodes_instances.append(node)
-                    
-                    self.items = self.items + [new_item]
-                    self.item_names = self.item_names + [node_id]
-                    self.item_ports = self.item_ports + [[[p.direction.value, p.position.value, p.name, p.display_name, p.offset] for p in c.ports]]
 
+                    self.items = self.items + [node.create()]
+                    self.item_names = self.item_names + [node.name]
+                    self.item_ports = self.item_ports + [[
+                                                            [
+                                                                p.direction.value, 
+                                                                p.position.value, 
+                                                                p.name, 
+                                                                p.display_name, 
+                                                                p.offset, 
+                                                                p.connection_count_limit,
+                                                                p.restriction.name if p.restriction is not None else None,  
+                                                                p.restriction.color if p.restriction is not None else None,  
+                                                            ] for p in node.ports]]
+                    
                     node.update(None)
                     
 
@@ -475,14 +482,35 @@ class ReactFlow(ReactComponent):
                 edge_changes.append(EdgeDeletion(e["source"], e["sourceHandle"], e["target"], e["targetHandle"]))
         
         return edge_changes
+    
+    def get_nodes(self,) -> List[NodeInstance]:
+        """Returns the nodes list
+
+        Returns
+        -------
+        List[NodeInstance]
+            Current nodes list
+        """
+        return list(self.nodes_instances)
+        
+    def get_edges(self,) -> List[EdgeInstance]:
+        """Returns the nodes list
+
+        Returns
+        -------
+        List[NodeInstance]
+            Current nodes list
+        """
+        return [EdgeInstance(e["source"], e["source_target"], e["target"], e["target_target"]) for e in self.edges]
         
 
 if __name__ == "__main__":
     class FloatInputNode(ReactFlowNode):
         node_class_name = "Float Input"
-        ports:List[NodePort] = [NodePort(direction=PortDirection.OUTPUT, position=PortPosition.BOTTOM, name="output")]
+        ports:List[NodePort] = [NodePort(direction=PortDirection.OUTPUT, position=PortPosition.RIGHT, name="output")]
 
         def __init__(self, ):
+            super().__init__()
             self.float_input = pn.widgets.FloatInput(value=0., width=100)
             
             self.float_input.param.watch(self.update, "value")
@@ -502,9 +530,10 @@ if __name__ == "__main__":
 
     class ResultNode(ReactFlowNode):
         node_class_name = "Result"
-        ports:List[NodePort] = [NodePort(direction=PortDirection.INPUT, position=PortPosition.TOP, name="input")]
+        ports:List[NodePort] = [NodePort(direction=PortDirection.INPUT, position=PortPosition.LEFT, name="input")]
 
         def __init__(self, ):
+            super().__init__()
             self.result_label = pn.pane.Markdown("Result : Undefined")
 
         def create(self, ):
@@ -517,22 +546,26 @@ if __name__ == "__main__":
         def update(self, _):
             value = 0
 
-            if len(self.plugged_nodes["input"]) == 0:
-                self.result_label.object = f"Result : Undefined"
-            else:
-                for float_input in self.plugged_nodes["input"]:
-                    value += float_input.get_node_json_value()["value"]
+            if "input" in self.plugged_nodes :
+                if len(self.plugged_nodes["input"]) == 0:
+                    self.result_label.object = f"Result : Undefined"
+                else:
+                    for float_input in self.plugged_nodes["input"]:
+                        value += float_input.get_node_json_value()["value"]
 
-                self.result_label.object = f"Addition result : {round(value, 1)}"
-            super().update(_)
+                    self.result_label.object = f"Addition result : {round(value, 1)}"
+                super().update(_)
 
         def get_node_json_value(self):
             return {"value" : self.result_label.object}
 
 
     def make_reactflow():
-        rf1 = ReactFlow(nodes_classes = [FloatInputNode, ResultNode])
+        rf1 = ReactFlow(nodes_classes = [FloatInputNode, ResultNode],
+                        initial_nodes=[],
+                        initial_edges=[])
 
         return rf1
 
-    make_reactflow().show()
+    rf = make_reactflow()
+    pn.Column(rf).show()
