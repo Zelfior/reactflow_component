@@ -330,7 +330,7 @@ class ReactFlow(ReactComponent):
         edge_changes = self._check_edge_change(edge_dict)
         
         if len([nc for nc in node_changes if type(nc) in [NodeCreation, NodeDeletion]]) > 0:
-            self.build_node_tree()
+            self._build_node_tree()
 
             self.nodes_instances = [node for node in self.nodes_instances if node.name in list(n["id"] for n in self.nodes)]
 
@@ -346,29 +346,34 @@ class ReactFlow(ReactComponent):
 
         for edge_change in edge_changes:
             if isinstance(edge_change, EdgeCreation):
-                self.build_node_tree()
+                self._build_node_tree()
                 self.nodes_instances[self.item_names.index(edge_change.target)].update(None)
             elif isinstance(edge_change, EdgeDeletion):
-                self.build_node_tree()
-                self.nodes_instances[self.item_names.index(edge_change.target)].update(None)
+                self._build_node_tree()
+                # Checking the node wasn't removed from the list (node deletion triggers an edge deletion)
+                if edge_change.target in self.item_names:
+                    self.nodes_instances[self.item_names.index(edge_change.target)].update(None)
             elif isinstance(edge_change, EdgeSelected):
                 if self.edge_selection_callback is not None:
-                    self.build_node_tree()
+                    self._build_node_tree()
                     self.edge_selection_callback(edge_change)
             elif isinstance(edge_change, EdgeDeselected):
                 if self.edge_deselection_callback is not None:
-                    self.build_node_tree()
+                    self._build_node_tree()
                     self.edge_deselection_callback(edge_change)
 
         # Storing the current node and edge state for next call
         self.old_nodes = node_dict
         self.old_edges = edge_dict
          
-    def build_node_tree(self,):
+    def _build_node_tree(self,):
         """Provides to the nodes who is plugged to them for the nodes updates
         """
         for node in self.nodes_instances:
             node.plugged_nodes = {port.name : [] for port in node.ports}
+
+        # Removing edges of the nodes that could have been removed in the event triggering the node tree building
+        self.edges = [e for e in self.edges if e["source"] in self.item_names and e["target"] in self.item_names]
 
         for edge in self.edges:
             source_node = [node for node in self.nodes_instances if node.name == edge["source"]][0]
@@ -413,6 +418,35 @@ class ReactFlow(ReactComponent):
                                             "y":node.y,
                                             "node_class_name":node.node.node_class_name
                                          })
+
+    def remove_nodes(self, nodes:List[str]):
+        """Removes the given nodes from the graph
+
+        Parameters
+        ----------
+        nodes : List[str]
+            List of nodes names to remove
+        """
+        for node in nodes:
+            if not node in self.item_names:
+                raise ValueError(f"Node {node} deletion requested, node name unknown.")
+            
+        self._send_event(ESMEvent, data={
+                                            "action":f"NodesRemoval",
+                                            "nodes_names":nodes,
+                                         })
+        
+        for node in nodes:
+            node_index = self.item_names.index(node)
+
+            self.items.pop(node_index)
+            self.item_names.pop(node_index)
+            self.item_ports.pop(node_index)
+
+    def clear(self,):
+        """Clears the node graph.
+        """
+        self.remove_nodes(list(self.item_names))
 
     def _check_node_change(self, new_node_dict:Dict[str, Any]) -> List[NodeChange] :
         """Checks if and what changed in the nodes list

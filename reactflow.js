@@ -11,7 +11,7 @@ import {
     useUpdateNodeInternals,
     getOutgoers,
     useReactFlow,
-    Handle, 
+    Handle,
     Position,
     useEdges,
 } from 'reactflow';
@@ -113,14 +113,14 @@ function countConnectedEdges(edges, currentPort) {
     return count;
 }
 const CustomRestrictiveHandle = (props) => {
-    let edges=useEdges();
+    let edges = useEdges();
 
-  return (
-    <Handle
-      {...props}
-      isConnectable={countConnectedEdges(edges, props) < props.connectionCount}
-    />
-  );
+    return (
+        <Handle
+            {...props}
+            isConnectable={countConnectedEdges(edges, props) < props.connectionCount}
+        />
+    );
 };
 
 /**
@@ -191,29 +191,29 @@ function renderPortsNames(ports) {
 
 function renderHandles(ports, origin, id) {
     return ports && ports.map((handle, index) => {
-        let [typeValue, 
-                positionValue, 
-                name, 
-                display_name, 
-                offset, 
-                connectionCount,
-                restiction_name,
-                restriction_color] = handle;
+        let [typeValue,
+            positionValue,
+            name,
+            display_name,
+            offset,
+            connectionCount,
+            restiction_name,
+            restriction_color] = handle;
         const type = typeValue === 0 ? 'target' : 'source';
         const position = positions[positionValue];
 
         if (connectionCount == undefined)
             connectionCount = 10000;
-        
-        let style={ 
+
+        let style = {
             background: restriction_color !== undefined ? restriction_color : '#000'
         };
 
-        if (offset != undefined){
-            style[[origin]]=offset;
+        if (offset != undefined) {
+            style[[origin]] = offset;
         }
 
-        if (typeof(restiction_name)==="undefined"){
+        if (typeof (restiction_name) === "undefined") {
             restiction_name = "default";
         }
 
@@ -223,10 +223,10 @@ function renderHandles(ports, origin, id) {
             position: position,
             id: name,
             title: name,
-            node_name:id,
-            style:style,
-            connectionCount:connectionCount,
-            restiction_name:restiction_name
+            node_name: id,
+            style: style,
+            connectionCount: connectionCount,
+            restiction_name: restiction_name
         };
 
         return <CustomRestrictiveHandle {...handleProperties} />
@@ -315,12 +315,12 @@ const getNodeTypes = (onMyTrigger) => ({
     panelWidget: PanelWidgetNode,
 });
 
-function getPortDict(node_name, port_name, node_list, port_list){
+function getPortDict(node_name, port_name, node_list, port_list) {
     let ports = port_list[node_list.indexOf(node_name)];
     let foundPort;
 
     ports.forEach(port => {
-        if (port[2] == port_name){
+        if (port[2] == port_name) {
             foundPort = port;
         }
     });
@@ -349,16 +349,16 @@ const DnDFlow = () => {
         .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":')  // fix keys
         .replace(/'/g, '"') // convert single to double quotes);
     );
-    
-    const [allowEdgeLoops, ] = model.useState("allow_edge_loops");
-    const [displaySidebar, ] = model.useState("display_side_bar");
+
+    const [allowEdgeLoops,] = model.useState("allow_edge_loops");
+    const [displaySidebar,] = model.useState("display_side_bar");
 
     const [nodes, setNodes, onNodesChange] = useNodesState(parsed_initial_nodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(parsed_initial_edges);
 
     const { screenToFlowPosition, getNodes, getEdges } = useReactFlow();
     const [type] = useDnD();
-    
+
 
     if (nodes !== py_nodes) {
         py_setNodes(nodes);
@@ -377,45 +377,48 @@ const DnDFlow = () => {
             let targetPort = getPortDict(params["target"], params["targetHandle"], item_names, ports_list);
 
             // Checking if the restriction name is the same
-            if (sourcePort[6] == targetPort[6]){
-                params["style"] = {stroke: targetPort[7]};
+            if (sourcePort[6] == targetPort[6]) {
+                params["style"] = { stroke: targetPort[7] };
                 setEdges((eds) => addEdge(params, eds));
             }
         },
         [setEdges, addEdge, edges, item_names, ports_list]
     );
 
-    const onEdgesChangeHandler = (changes) => {
-        onEdgesChange(changes);
+    const onEdgesChangeHandler = useCallback(
+        (changes) => {
+            onEdgesChange(changes);
 
-        let new_edge = [];
-        changes.forEach((change) => {
-            if (Object.hasOwn(change, 'item')) {
-                new_edge.push(change.item);
+            let new_edge = [];
+            changes.forEach((change) => {
+                if (Object.hasOwn(change, 'item')) {
+                    new_edge.push(change.item);
+                }
+            });
+
+            if (new_edge.length !== 0) {
+                py_setEdges(new_edge);
             }
-        });
+        }, [py_setEdges]
+    );
 
-        if (new_edge.length !== 0) {
-            py_setEdges(new_edge);
-        }
-    };
+    const onNodesChangeHandler = useCallback(
+        (changes) => {
+            onNodesChange(changes);
 
-    const onNodesChangeHandler = (changes) => {
-        onNodesChange(changes);
-
-        let new_nodes = [];
-        changes.forEach((change) => {
-            if (Object.hasOwn(change, 'item')) {
-                new_nodes.push(change.item);
-                console.log(change.item.data);
+            let new_nodes = [];
+            changes.forEach((change) => {
+                if (Object.hasOwn(change, 'item')) {
+                    new_nodes.push(change.item);
+                    console.log(change.item.data);
+                }
+            });
+            if (new_nodes.length !== 0) {
+                py_setNodes(new_nodes);
+                model.send_msg('Node Change');
             }
-        });
-        if (new_nodes.length !== 0) {
-            py_setNodes(new_nodes);
-            model.send_msg('Node Change');
-            // model.nodes = new_nodes;
-        }
-    };
+        }, [py_setNodes]
+    );
 
     const onMyTrigger = useCallback((new_nodes) => {
         console.log("New nodes my trigger", new_nodes);
@@ -485,6 +488,15 @@ const DnDFlow = () => {
             };
 
             setNodes((nds) => nds.concat(newNode));
+        }
+        else if (action == "NodesRemoval") {
+            const nodes_list = msg["nodes_names"];
+
+            setNodes((nds) => {
+                return nds.filter((node) => !nodes_list.includes(node.id));
+            });
+
+
         }
     }
     // Receive message from panel

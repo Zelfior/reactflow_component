@@ -50,8 +50,9 @@ class NodeClass(ReactFlowNode):
     def on_node_deselected(self, ):
         """Function triggered when a node is deselected
         """
-        self.node_editor.selected_nodes.remove(self.name)
-        self.node_editor.update_information()
+        if self.name in self.node_editor.selected_nodes:
+            self.node_editor.selected_nodes.remove(self.name)
+            self.node_editor.update_information()
 
 class NodesEditor:
     def __init__(self):
@@ -72,19 +73,46 @@ class NodesEditor:
         
         def remove_selected_nodes(event):
             print(f"Removing nodes: {self.selected_nodes}")
+            self.rf.remove_nodes(self.selected_nodes)
+            self.selected_nodes.clear()
+            self.update_information()
+        
+        def clear_nodes(event):
+            print("Clearing nodes")
+            self.rf.clear()
+            self.selected_edges.clear()
+            self.selected_nodes.clear()
+            self.update_information()
+            self.current_node_index = 0
         
         self.add_node_button = pn.widgets.Button(name="Add node")
-        self.remove_node_button = pn.widgets.Button(name="Remove node")
+        self.remove_node_button = pn.widgets.Button(name="Remove selected nodes")
+        self.clear_node_button = pn.widgets.Button(name="Clear nodes")
+        
+        self.add_edge_button = pn.widgets.Button(name="Add edge between nodes")
+        self.remove_edge_button = pn.widgets.Button(name="Remove selected edges")
+        self.clear_edge_button = pn.widgets.Button(name="Clear edges")
 
         self.add_node_button.on_click(add_new_node)
         self.remove_node_button.on_click(remove_selected_nodes)
+        self.clear_node_button.on_click(clear_nodes)
 
         self.selected_nodes = []
         self.selected_edges = []
 
         self.information_pane = pn.pane.Markdown("Selected nodes : \n\nSelected edges : \n\n")
 
-        self.layout = pn.Row(self.rf, pn.Column(self.information_pane, pn.layout.Divider(), self.add_node_button, self.remove_node_button, width = 250))
+        self.layout = pn.Row(self.rf, pn.Column(self.information_pane, 
+                                                
+                                                pn.layout.Divider(), 
+                                                
+                                                self.add_node_button, self.remove_node_button, self.clear_node_button, 
+                                                
+                                                pn.layout.Divider(), 
+                                                
+                                                self.add_edge_button, self.remove_edge_button, self.clear_edge_button, 
+
+                                                width = 250))
 
     def update_information(self,):
         self.information_pane.object = "Selected nodes :\n" + "\n".join([f"- {e}" for e in self.selected_nodes]) +"\n\n"+\
