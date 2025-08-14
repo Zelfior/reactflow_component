@@ -190,6 +190,11 @@ class ReactFlow(ReactComponent):
         self.param.watch(self.update_nodes, "nodes")
         self.param.watch(self.update_nodes, "edges")
 
+        self.edge_selection_callback = None
+        """Function called when an edge is selected, can be set by calling set_on_edge_selection"""
+        self.edge_deselection_callback = None
+        """Function called when an edge is deselected, can be set by calling set_on_edge_deselection"""
+
     def _edge_to_string(self, edge:EdgeInstance):
         """Checks the EdgeInstance and prepares the dictionnary understood by reactflow
 
@@ -264,16 +269,21 @@ class ReactFlow(ReactComponent):
 
         return edge_dict
 
-    def _handle_msg(self, data:str):
+    def _handle_msg(self, data:Dict[str, Any]):
         """Handle the message received from the ReactFlow JavaScript.
 
         Parameters
         ----------
-        data : str
+        data : Dict[str, Any]
             Message content
         """
-        if data.startswith("NEW_NODE"):
-            _, node_id, node_type, x, y = data.split(":")
+        action = data["action"]
+
+        if action == "NEW_NODE":
+            node_id= data["node_id"]
+            node_type= data["type"]
+            x= data["x"]
+            y= data["y"]
 
             for c in self.nodes_classes:
                 if c.node_class_name == node_type:
@@ -281,24 +291,8 @@ class ReactFlow(ReactComponent):
 
                     node = c()
                     node.name = f"{node_id}"
-                    
-                    self.nodes_instances.append(node)
-
-                    self.items = self.items + [node.create()]
-                    self.item_names = self.item_names + [node.name]
-                    self.item_ports = self.item_ports + [[
-                                                            [
-                                                                p.direction.value, 
-                                                                p.position.value, 
-                                                                p.name, 
-                                                                p.display_name, 
-                                                                p.offset, 
-                                                                p.connection_count_limit,
-                                                                p.restriction.name if p.restriction is not None else None,  
-                                                                p.restriction.color if p.restriction is not None else None,  
-                                                            ] for p in node.ports]]
-                    
-                    node.update(None)
+                    node_instance = NodeInstance(f"{node_id}", node, x, y)
+                    self.add_node(node_instance)
                     
 
     def print_state(self, _=None):
@@ -341,14 +335,14 @@ class ReactFlow(ReactComponent):
             self.nodes_instances = [node for node in self.nodes_instances if node.name in list(n["id"] for n in self.nodes)]
 
         for node_change in node_changes:
-            if isinstance(node_changes, NodeCreation):
-                self.nodes_instances[self.item_names.index(node_change)].update(None)
-            elif isinstance(node_changes, NodeMove):
-                self.nodes_instances[self.item_names.index(node_change)].on_node_move(node_change)
-            elif isinstance(node_changes, NodeSelected):
-                self.nodes_instances[self.item_names.index(node_change)].on_node_selected()
-            elif isinstance(node_changes, NodeDeselected):
-                self.nodes_instances[self.item_names.index(node_change)].on_node_deselected()
+            if isinstance(node_change, NodeCreation):
+                self.nodes_instances[self.item_names.index(node_change.node_name)].update(None)
+            elif isinstance(node_change, NodeMove):
+                self.nodes_instances[self.item_names.index(node_change.node_name)].on_node_move(node_change)
+            elif isinstance(node_change, NodeSelected):
+                self.nodes_instances[self.item_names.index(node_change.node_name)].on_node_selected()
+            elif isinstance(node_change, NodeDeselected):
+                self.nodes_instances[self.item_names.index(node_change.node_name)].on_node_deselected()
 
         for edge_change in edge_changes:
             if isinstance(edge_change, EdgeCreation):
@@ -357,6 +351,14 @@ class ReactFlow(ReactComponent):
             elif isinstance(edge_change, EdgeDeletion):
                 self.build_node_tree()
                 self.nodes_instances[self.item_names.index(edge_change.target)].update(None)
+            elif isinstance(edge_change, EdgeSelected):
+                if self.edge_selection_callback is not None:
+                    self.build_node_tree()
+                    self.edge_selection_callback(edge_change)
+            elif isinstance(edge_change, EdgeDeselected):
+                if self.edge_deselection_callback is not None:
+                    self.build_node_tree()
+                    self.edge_deselection_callback(edge_change)
 
         # Storing the current node and edge state for next call
         self.old_nodes = node_dict
@@ -386,11 +388,12 @@ class ReactFlow(ReactComponent):
         node : NodeInstance
             Node to store
         """
+        print(f"Adding node {node.name} at ({node.x}, {node.y})")
         node.node.name = node.name
         self.nodes_instances.append(node.node)
 
         self.items = self.items + [node.node.create()]
-        self.item_names = self.item_names + [node.node.name]
+        self.item_names = self.item_names + [node.name]
         self.item_ports = self.item_ports + [[
                                                 [
                                                     p.direction.value, 
@@ -403,7 +406,13 @@ class ReactFlow(ReactComponent):
                                                     p.restriction.color if p.restriction is not None else None,  
                                                 ] for p in node.node.ports]]
 
-        self._send_event(ESMEvent, data=f"NodeCreation@{node.name}@{node.x}@{node.y}@{node.node.node_class_name}")
+        self._send_event(ESMEvent, data={
+                                            "action":f"NodeCreation",
+                                            "node_name":node.name,
+                                            "x":node.x,
+                                            "y":node.y,
+                                            "node_class_name":node.node.node_class_name
+                                         })
 
     def _check_node_change(self, new_node_dict:Dict[str, Any]) -> List[NodeChange] :
         """Checks if and what changed in the nodes list
@@ -503,6 +512,26 @@ class ReactFlow(ReactComponent):
         """
         return [EdgeInstance(e["source"], e["source_target"], e["target"], e["target_target"]) for e in self.edges]
         
+    def set_on_edge_selection(self, callback:Callable):
+        """Sets the function called when an edge is selected
+
+        Parameters
+        ----------
+        callback : Callable
+            Function called
+        """
+        self.edge_selection_callback = callback
+        
+        
+    def set_on_edge_deselection(self, callback:Callable):
+        """Sets the function called when an edge is deselected
+
+        Parameters
+        ----------
+        callback : Callable
+            Function called
+        """
+        self.edge_deselection_callback = callback
 
 if __name__ == "__main__":
     class FloatInputNode(ReactFlowNode):
@@ -525,7 +554,7 @@ if __name__ == "__main__":
         def update(self, _):
             super().update(_)
 
-        def get_node_json_value(self):
+        def get_node_json_value(self) -> Dict[str, Any]:
             return {"value" : self.float_input.value}
 
     class ResultNode(ReactFlowNode):
@@ -556,7 +585,7 @@ if __name__ == "__main__":
                     self.result_label.object = f"Addition result : {round(value, 1)}"
                 super().update(_)
 
-        def get_node_json_value(self):
+        def get_node_json_value(self) -> Dict[str, Any]:
             return {"value" : self.result_label.object}
 
 

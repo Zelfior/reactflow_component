@@ -15,7 +15,7 @@ import {
     Position,
     useEdges,
 } from 'reactflow';
-import { useRef, useCallback, createContext, useContext, useState, useMemo, forwardRef, HTMLAttributes, memo } from 'react';
+import { useRef, useCallback, createContext, useContext, useState, useMemo, forwardRef, HTMLAttributes, memo, useEffect } from 'react';
 
 // import {
 //     useNodeConnections ,
@@ -446,11 +446,17 @@ const DnDFlow = () => {
                 data: { label: `${type} node` },
             };
 
-            model.send_msg("NEW_NODE:" + newNode.id + ":" + type.toString()+":"+newNode.position.x.toString()+":"+newNode.position.y.toString());
+            model.send_msg({
+                action: "NEW_NODE",
+                node_id: newNode.id,
+                type: type.toString(),
+                x: newNode.position.x,
+                y: newNode.position.y,
+            });
 
             setNodes((nds) => nds.concat(newNode));
         },
-        [screenToFlowPosition, type]
+        [screenToFlowPosition, type, setNodes]
     );
 
     const onDragStart = (event, nodeType) => {
@@ -462,12 +468,15 @@ const DnDFlow = () => {
     const nodeTypes = useMemo(() => getNodeTypes(onMyTrigger), [onMyTrigger]);
 
     // Functions to create nodes and edges from python
-    function receiveMessage(msg) {
-        console.log("Received message ", msg)
-        let action = msg.split("@")[0];
+    function receiveMessage(msg, setNodes) {
+        let action = msg["action"];
 
         if (action == "NodeCreation") {
-            const [, node_id, x, y, node_class_name] = msg.split("@");
+            const node_id = msg["node_name"];
+            const x = msg["x"];
+            const y = msg["y"];
+            const node_class_name = msg["node_class_name"];
+
             const newNode = {
                 id: node_id,
                 type: 'panelWidget',
@@ -479,9 +488,11 @@ const DnDFlow = () => {
         }
     }
     // Receive message from panel
-    model.on('msg:custom', (msg) => {
-        receiveMessage(msg)
-    })
+    useEffect(() => {
+        model.on('msg:custom', (msg) => {
+            receiveMessage(msg, setNodes);
+        });
+    }, [setNodes]); // Missing dependencies!
 
     const isValidConnection = useCallback(
         (connection) => {

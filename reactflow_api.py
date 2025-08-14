@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 from enum import Enum
 import panel as pn
-from typing import Callable, Dict, List
+from typing import Any, Callable, Dict, List
 
 class PortDirection(Enum):
     """Whether the port is an input or output. The update function will spread through output ports."""
@@ -309,9 +309,13 @@ class ReactFlowNode:
                 for node in self.plugged_nodes[port.name]:
                     node.update(_)
     
-    def get_node_json_value(self,):
+    def get_node_json_value(self,) -> Dict[str, Any]:
         """ Returns a dictionnary describing the node content, this dictionnary can be obtain by other nodes in their update call.
         
+        Returns
+        ----------
+        Dict[str, Any]
+            Node properties
         """
         raise NotImplementedError
     
