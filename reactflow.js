@@ -496,6 +496,11 @@ const DnDFlow = () => {
                 return nds.filter((node) => !nodes_list.includes(node.id));
             });
         }
+        else if (action == "EdgesCreation") {
+            const edges = msg["edges"];
+
+            setEdges((edg) => edg.concat(edges));
+        }
         else if (action == "EdgesRemoval") {
             const edges_list = msg["edges"];
 

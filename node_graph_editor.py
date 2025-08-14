@@ -91,6 +91,14 @@ class NodesEditor:
             self.selected_edges.clear()
             self.update_information()
         
+        def add_new_edge(event):
+            if len(self.selected_nodes) > 1:
+                print(f"Adding edge from ({self.selected_nodes[0]}, output) to ({self.selected_nodes[1]}, input).")
+                self.rf.add_edges([EdgeInstance(self.selected_nodes[0], "output", self.selected_nodes[1], "input")])
+                self.current_node_index += 1
+            else:
+                print("Select two nodes to add an edge")
+        
         self.add_node_button = pn.widgets.Button(name="Add node")
         self.remove_node_button = pn.widgets.Button(name="Remove selected nodes")
         
@@ -103,6 +111,7 @@ class NodesEditor:
         self.remove_node_button.on_click(remove_selected_nodes)
         self.clear_button.on_click(clear)
 
+        self.add_edge_button.on_click(add_new_edge)
         self.remove_edge_button.on_click(remove_selected_edges)
 
         self.selected_nodes = []

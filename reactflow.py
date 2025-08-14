@@ -383,7 +383,7 @@ class ReactFlow(ReactComponent):
             target_node.plugged_nodes[target_port_name].append(source_node)
 
     def add_node(self, node:NodeInstance):
-        """Storing the informations of a nodes in the class attributes
+        """Adds a node to the graph and stores the informations of a nodes in the class attributes
 
         Parameters
         ----------
@@ -438,6 +438,47 @@ class ReactFlow(ReactComponent):
             self.items.pop(node_index)
             self.item_names.pop(node_index)
             self.item_ports.pop(node_index)
+
+    def add_edges(self, edges:List[EdgeInstance]):
+        """Adds edges to the graph
+
+        Parameters
+        ----------
+        edges : List[EdgeInstance]
+            Added edges
+        """
+        for edge in edges:
+            if not edge.source in self.item_names:
+                raise ValueError(f"Edge source node {edge.source} not present in the nodes list.")
+            if not edge.target in self.item_names:
+                raise ValueError(f"Edge target node {edge.target} not present in the nodes list.")
+            
+            source_ports = [
+                p[2]
+                for p in self.item_ports[self.item_names.index(edge.source)]
+            ]
+            target_ports = [
+                p[2]
+                for p in self.item_ports[self.item_names.index(edge.target)]
+            ]
+            if not edge.source_handle in source_ports:
+                raise ValueError(f"Edge source handle {edge.source_handle} not present in the node {edge.source} handles, found ports : {source_ports}.")
+            if not edge.target_handle in target_ports:
+                raise ValueError(f"Edge target handle {edge.target_handle} not present in the node {edge.target} handles, found ports : {target_ports}.")
+
+        self._send_event(ESMEvent, data={
+                                            "action":f"EdgesCreation",
+                                            "edges":[
+                                                {
+                                                    "id":":".join([e.source, e.source_handle, e.target, e.target_handle]),
+                                                    "source":e.source,
+                                                    "sourceHandle":e.source_handle,
+                                                    "target":e.target,
+                                                    "targetHandle":e.target_handle,
+                                                }
+                                                for e in edges
+                                            ]
+                                         })
 
     def remove_edges(self, edges:List[EdgeInstance]):
         """Removes the given edges from the graph
