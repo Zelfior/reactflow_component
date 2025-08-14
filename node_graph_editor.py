@@ -3,7 +3,7 @@ import functools
 from typing import List, Dict, Any
 import panel as pn
 
-from reactflow_api import EdgeSelected, EdgeDeselected, NodeInstance, ReactFlowNode, PortDirection, PortPosition, NodePort
+from reactflow_api import EdgeInstance, EdgeSelected, EdgeDeselected, NodeInstance, ReactFlowNode, PortDirection, PortPosition, NodePort
 from reactflow import ReactFlow
 
 class NodeClass(ReactFlowNode):
@@ -85,6 +85,12 @@ class NodesEditor:
             self.update_information()
             self.current_node_index = 0
         
+        def remove_selected_edges(event):
+            print(f"Removing edges: {self.selected_edges}")
+            self.rf.remove_edges([EdgeInstance(*e) for e in self.selected_edges])
+            self.selected_edges.clear()
+            self.update_information()
+        
         self.add_node_button = pn.widgets.Button(name="Add node")
         self.remove_node_button = pn.widgets.Button(name="Remove selected nodes")
         self.clear_node_button = pn.widgets.Button(name="Clear nodes")
@@ -96,6 +102,8 @@ class NodesEditor:
         self.add_node_button.on_click(add_new_node)
         self.remove_node_button.on_click(remove_selected_nodes)
         self.clear_node_button.on_click(clear_nodes)
+
+        self.remove_edge_button.on_click(remove_selected_edges)
 
         self.selected_nodes = []
         self.selected_edges = []
@@ -119,11 +127,12 @@ class NodesEditor:
                                          "Selected edges :\n" + "\n".join([f"- {e}" for e in self.selected_edges])+"\n\n"
 
     def on_edge_selection(self, es:EdgeSelected):
-        self.selected_edges.append((es.source, es.target))
+        print("Selected edge")
+        self.selected_edges.append((es.source, es.source_handle, es.target, es.target_handle))
         self.update_information()
 
     def on_edge_deselection(self, es:EdgeDeselected):
-        self.selected_edges.remove((es.source, es.target))
+        self.selected_edges.remove((es.source, es.source_handle, es.target, es.target_handle))
         self.update_information()
 
 

@@ -395,3 +395,15 @@ class EdgeInstance:
         self.target_handle = target_handle
         """Plugged port name in the target node"""
 
+    def __eq__(self, other:"EdgeInstance"):
+        if not isinstance(other, EdgeInstance):
+            return False
+        
+        return self.source == other.source \
+                and self.source_handle == other.source_handle \
+                and self.target == other.target \
+                and self.target_handle == other.target_handle
+    
+    def __hash__(self):
+        return hash(self.source+self.source_handle+self.target+self.target_handle)
+        
