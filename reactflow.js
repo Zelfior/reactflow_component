@@ -471,7 +471,7 @@ const DnDFlow = () => {
     const nodeTypes = useMemo(() => getNodeTypes(onMyTrigger), [onMyTrigger]);
 
     // Functions to create nodes and edges from python
-    function receiveMessage(msg, setNodes) {
+    function receiveMessage(msg, setNodes, setEdges) {
         let action = msg["action"];
 
         if (action == "NodeCreation") {
@@ -495,16 +495,28 @@ const DnDFlow = () => {
             setNodes((nds) => {
                 return nds.filter((node) => !nodes_list.includes(node.id));
             });
+        }
+        else if (action == "EdgesRemoval") {
+            const edges_list = msg["edges"];
 
-
+            setEdges((eds) => {
+                return eds.filter((edge) => {
+                    return !edges_list.some((e) =>
+                        edge.source === e.source &&
+                        edge.sourceHandle === e.sourceHandle &&
+                        edge.target === e.target &&
+                        edge.targetHandle === e.targetHandle
+                    );
+                });
+            });
         }
     }
     // Receive message from panel
     useEffect(() => {
         model.on('msg:custom', (msg) => {
-            receiveMessage(msg, setNodes);
+            receiveMessage(msg, setNodes, setEdges);
         });
-    }, [setNodes]); // Missing dependencies!
+    }, [setNodes, setEdges]); // Missing dependencies!
 
     const isValidConnection = useCallback(
         (connection) => {

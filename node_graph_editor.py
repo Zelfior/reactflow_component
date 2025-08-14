@@ -9,7 +9,7 @@ from reactflow import ReactFlow
 class NodeClass(ReactFlowNode):
     node_class_name = "Result"
     ports:List[NodePort] = [NodePort(direction=PortDirection.INPUT, position=PortPosition.LEFT, name="input"),
-                            NodePort(direction=PortDirection.OUTPUT, position=PortPosition.RIGHT, name="input")]
+                            NodePort(direction=PortDirection.OUTPUT, position=PortPosition.RIGHT, name="output")]
     
     def __init__(self, node_editor:"NodesEditor"):
         self.name = ""
@@ -77,7 +77,7 @@ class NodesEditor:
             self.selected_nodes.clear()
             self.update_information()
         
-        def clear_nodes(event):
+        def clear(event):
             print("Clearing nodes")
             self.rf.clear()
             self.selected_edges.clear()
@@ -93,15 +93,15 @@ class NodesEditor:
         
         self.add_node_button = pn.widgets.Button(name="Add node")
         self.remove_node_button = pn.widgets.Button(name="Remove selected nodes")
-        self.clear_node_button = pn.widgets.Button(name="Clear nodes")
         
         self.add_edge_button = pn.widgets.Button(name="Add edge between nodes")
         self.remove_edge_button = pn.widgets.Button(name="Remove selected edges")
-        self.clear_edge_button = pn.widgets.Button(name="Clear edges")
+        
+        self.clear_button = pn.widgets.Button(name="Clear graph")
 
         self.add_node_button.on_click(add_new_node)
         self.remove_node_button.on_click(remove_selected_nodes)
-        self.clear_node_button.on_click(clear_nodes)
+        self.clear_button.on_click(clear)
 
         self.remove_edge_button.on_click(remove_selected_edges)
 
@@ -114,11 +114,15 @@ class NodesEditor:
                                                 
                                                 pn.layout.Divider(), 
                                                 
-                                                self.add_node_button, self.remove_node_button, self.clear_node_button, 
+                                                self.add_node_button, self.remove_node_button, 
                                                 
                                                 pn.layout.Divider(), 
                                                 
-                                                self.add_edge_button, self.remove_edge_button, self.clear_edge_button, 
+                                                self.add_edge_button, self.remove_edge_button, 
+
+                                                pn.layout.Divider(), 
+                                                
+                                                self.clear_button, 
 
                                                 width = 250))
 

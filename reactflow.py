@@ -366,7 +366,6 @@ class ReactFlow(ReactComponent):
     def _build_node_tree(self,):
         """Provides to the nodes who is plugged to them for the nodes updates
         """
-        print("Building tree")
         for node in self.nodes_instances:
             node.plugged_nodes = {port.name : [] for port in node.ports}
 
@@ -391,7 +390,6 @@ class ReactFlow(ReactComponent):
         node : NodeInstance
             Node to store
         """
-        print(f"Adding node {node.name} at ({node.x}, {node.y})")
         node.node.name = node.name
         self.nodes_instances.append(node.node)
 
@@ -453,23 +451,28 @@ class ReactFlow(ReactComponent):
             if not edge in self.get_edges():
                 raise ValueError(f"Edge {edge} not in the current edges list.")
             
-            
-        # self._send_event(ESMEvent, data={
-        #                                     "action":f"NodesRemoval",
-        #                                     "nodes_names":nodes,
-        #                                  })
-        
-        # for node in nodes:
-        #     node_index = self.item_names.index(node)
-
-        #     self.items.pop(node_index)
-        #     self.item_names.pop(node_index)
-        #     self.item_ports.pop(node_index)
+        self._send_event(ESMEvent, data={
+                                            "action":f"EdgesRemoval",
+                                            "edges":[
+                                                {
+                                                    "source" : e.source, 
+                                                    "sourceHandle" : e.source_handle, 
+                                                    "target" : e.target, 
+                                                    "targetHandle" : e.target_handle
+                                                }
+                                                for e in edges
+                                            ],
+                                         })
 
     def clear(self,):
         """Clears the node graph.
         """
-        self.remove_edges(list(self.edges))
+        self.remove_edges([EdgeInstance(
+                                e["source"],
+                                e["sourceHandle"],
+                                e["target"],
+                                e["targetHandle"],
+                                    ) for e in self.edges])
         self.remove_nodes(list(self.item_names))
 
     def _check_node_change(self, new_node_dict:Dict[str, Any]) -> List[NodeChange] :
@@ -548,7 +551,6 @@ class ReactFlow(ReactComponent):
                 e = self.old_edges[edge]
                 edge_changes.append(EdgeDeletion(e["source"], e["sourceHandle"], e["target"], e["targetHandle"]))
         
-        print(edge_changes)
         return edge_changes
     
     def get_nodes(self,) -> List[NodeInstance]:
