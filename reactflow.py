@@ -332,7 +332,6 @@ class ReactFlow(ReactComponent):
         if len([nc for nc in node_changes if type(nc) in [NodeCreation, NodeDeletion]]) +\
             len([ec for ec in edge_changes if type(ec) in [EdgeCreation, EdgeDeletion]]) > 0:
             self._build_node_tree()
-            print("Tree built")
 
             self.nodes_instances = [node for node in self.nodes_instances if node.name in list(n["id"] for n in self.nodes)]
 
@@ -367,11 +366,11 @@ class ReactFlow(ReactComponent):
     def _build_node_tree(self,):
         """Provides to the nodes who is plugged to them for the nodes updates
         """
-        for node in self.nodes_instances:
-            node.plugged_nodes = {port.name : [] for port in node.ports}
-
         # Removing edges of the nodes that could have been removed in the event triggering the node tree building
         self.edges = [e for e in self.edges if e["source"] in self.item_names and e["target"] in self.item_names]
+
+        for node in self.nodes_instances:
+            node.plugged_nodes = {port.name : [] for port in node.ports}
 
         for edge in self.edges:
             source_node = [node for node in self.nodes_instances if node.name == edge["source"]][0]
