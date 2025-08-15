@@ -304,10 +304,16 @@ class ReactFlowNode:
         _ : Any
             Event requesting the update
         """
+        self.update_outputs()
+    
+    def update_outputs(self, ):
+        """Call the output function on all nodes plugged on output ports.
+        """
         for port in self.ports:
             if port.direction == PortDirection.OUTPUT and port.name in self.plugged_nodes:
                 for node in self.plugged_nodes[port.name]:
-                    node.update(_)
+                    node.update(None)
+
     
     def get_node_json_value(self,) -> Dict[str, Any]:
         """ Returns a dictionnary describing the node content, this dictionnary can be obtain by other nodes in their update call.

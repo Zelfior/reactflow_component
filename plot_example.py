@@ -20,7 +20,7 @@ p.line(x=[0], y=[0])
 
 pn.state.curdoc = curdoc()
 
-bokeh_plot = pn.pane.Bokeh(p, sizing_mode = "stretch_both")
+bokeh_plot = pn.pane.Bokeh(p, sizing_mode = "stretch_both" )
 
 df = pd.DataFrame({
     "sinus": [math.sin(t/10) for t in range(50)],
@@ -53,7 +53,7 @@ class TextInputNode(ReactFlowNode):
                                 )
     
     def update(self, _):
-        super().update(_)
+        self.update_outputs()
 
     def get_node_json_value(self):
         return {"value" : self.text_input.value}
@@ -81,7 +81,7 @@ class InputDataFrameNode(ReactFlowNode):
     
     def update(self, _):
         print("Updating dataframe")
-        super().update(_)
+        self.update_outputs()
 
     def get_node_json_value(self):
         return {"dataframe" : self.df}
@@ -121,7 +121,7 @@ class ColumnSelectNode(ReactFlowNode):
 
                 if self.df_columns.value in self.df_columns.options:
                     self.column_value = list(self.plugged_nodes["DataFrame"][0].get_node_json_value()["dataframe"][self.df_columns.value])
-        super().update(_)
+        self.update_outputs()
 
     def get_node_json_value(self):
         return {"value" : self.column_value, "name":self.df_columns.value}
@@ -176,7 +176,7 @@ class BokehPlotNode(ReactFlowNode):
 
         pn.state.curdoc.add_next_tick_callback(self.replace_figure)
 
-        super().update(_)
+        self.update_outputs()
 
     def get_node_json_value(self):
         return {}
@@ -204,4 +204,4 @@ pn.Row(
                   ),
         bokeh_plot,
         sizing_mode = "stretch_both"
-    ).show()
+    ).servable()
