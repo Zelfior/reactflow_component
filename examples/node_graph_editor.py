@@ -3,10 +3,11 @@ import functools
 from typing import List, Dict, Any
 import panel as pn
 
-from reactflow_api import EdgeInstance, EdgeSelected, EdgeDeselected, NodeInstance, ReactFlowNode, PortDirection, PortPosition, NodePort
-from reactflow import ReactFlow
+from panel_reactflow.reactflow_api import Edge, Node, PortDirection, PortPosition, NodePort
+from panel_reactflow.events import EdgeSelected, EdgeDeselected
+from panel_reactflow.workflow import Workflow, WorkflowNode
 
-class NodeClass(ReactFlowNode):
+class NodeClass(WorkflowNode):
     node_class_name = "Result"
     ports:List[NodePort] = [NodePort(direction=PortDirection.INPUT, position=PortPosition.LEFT, name="input"),
                             NodePort(direction=PortDirection.OUTPUT, position=PortPosition.RIGHT, name="output")]
@@ -60,15 +61,15 @@ class NodesEditor:
         class ClassWithNodeEditor(NodeClass):
             __init__ = functools.partialmethod(NodeClass.__init__, node_editor = self)
 
-        self.rf = ReactFlow(nodes_classes = [ClassWithNodeEditor])
-        self.rf.set_on_edge_deselection(self.on_edge_deselection)
-        self.rf.set_on_edge_selection(self.on_edge_selection)
+        self.rf = Workflow(nodes_classes = [ClassWithNodeEditor])
+        self.rf.on_event(EdgeDeselected, self.on_edge_deselection)
+        self.rf.on_event(EdgeSelected, self.on_edge_selection)
 
         self.current_node_index = 0
 
         def add_new_node(event):
             print("Adding node", f"node_{self.current_node_index}")
-            self.rf.add_node(NodeInstance(f"node_{self.current_node_index}", ClassWithNodeEditor(), 0., 0.))
+            self.rf.add_node(Node(f"node_{self.current_node_index}", ClassWithNodeEditor(), 0., 0.))
             self.current_node_index += 1
         
         def remove_selected_nodes(event):
@@ -87,14 +88,14 @@ class NodesEditor:
         
         def remove_selected_edges(event):
             print(f"Removing edges: {self.selected_edges}")
-            self.rf.remove_edges([EdgeInstance(*e) for e in self.selected_edges])
+            self.rf.remove_edges([Edge(*e) for e in self.selected_edges])
             self.selected_edges.clear()
             self.update_information()
         
         def add_new_edge(event):
             if len(self.selected_nodes) > 1:
                 print(f"Adding edge from ({self.selected_nodes[0]}, output) to ({self.selected_nodes[1]}, input).")
-                self.rf.add_edges([EdgeInstance(self.selected_nodes[0], "output", self.selected_nodes[1], "input")])
+                self.rf.add_edges([Edge(self.selected_nodes[0], "output", self.selected_nodes[1], "input")])
                 self.current_node_index += 1
             else:
                 print("Select two nodes to add an edge")

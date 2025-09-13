@@ -1,4 +1,4 @@
-from typing import Callable
+
 import panel as pn
 from typing import List
 
@@ -8,9 +8,9 @@ import math
 from bokeh.plotting import figure
 from bokeh.io import curdoc
 
-from reactflow import EdgeInstance, NodeInstance, ReactFlow, ReactFlowNode, NodePort, PortDirection, PortPosition
-from reactflow_api import PortRestriction
-
+from panel_reactflow.workflow import Workflow, WorkflowNode
+from panel_reactflow.reactflow_api import PortRestriction
+from panel_reactflow.reactflow_api import NodePort, PortDirection, PortPosition, Edge, Node
 
 """
     Creating objects used by default by the nodes
@@ -35,7 +35,7 @@ column_restriction = PortRestriction("column", "#008035")
 """
     Nodes definition
 """
-class TextInputNode(ReactFlowNode):
+class TextInputNode(WorkflowNode):
     node_class_name = "Text Input"
     ports:List[NodePort] = [NodePort(direction=PortDirection.OUTPUT, position=PortPosition.BOTTOM, name="Output", restriction=string_restriction)]
 
@@ -59,7 +59,7 @@ class TextInputNode(ReactFlowNode):
         return {"value" : self.text_input.value}
 
 
-class InputDataFrameNode(ReactFlowNode):
+class InputDataFrameNode(WorkflowNode):
     node_class_name = "Input DataFrame"
     ports:List[NodePort] = [NodePort(direction=PortDirection.OUTPUT, 
                                         position=PortPosition.RIGHT, 
@@ -87,7 +87,7 @@ class InputDataFrameNode(ReactFlowNode):
         return {"dataframe" : self.df}
 
 
-class ColumnSelectNode(ReactFlowNode):
+class ColumnSelectNode(WorkflowNode):
     node_class_name = "Column select"
 
     ports:List[NodePort] = [
@@ -128,7 +128,7 @@ class ColumnSelectNode(ReactFlowNode):
     
 
 
-class BokehPlotNode(ReactFlowNode):
+class BokehPlotNode(WorkflowNode):
     node_class_name = "Bokeh plot"
     ports:List[NodePort] = [
             NodePort(direction=PortDirection.INPUT, position=PortPosition.LEFT, name="Title", offset=20, display_name=True, connection_count_limit=1, restriction=string_restriction),
@@ -185,21 +185,21 @@ class BokehPlotNode(ReactFlowNode):
     Panel definition and display
 """
 pn.Row(
-        ReactFlow(
+        Workflow(
                     nodes_classes = [TextInputNode, InputDataFrameNode, ColumnSelectNode, BokehPlotNode], 
                     initial_nodes = [
-                        NodeInstance("output", BokehPlotNode(), 725., 291.),
-                        NodeInstance("text_input", TextInputNode(), 585., 172.),
-                        NodeInstance("input_df", InputDataFrameNode(), 158., 295.),
-                        NodeInstance("column_select_0", ColumnSelectNode(), 416., 300.),
-                        NodeInstance("column_select_1", ColumnSelectNode(), 415., 389.)
+                        Node("output", BokehPlotNode(), 725., 291.),
+                        Node("text_input", TextInputNode(), 585., 172.),
+                        Node("input_df", InputDataFrameNode(), 158., 295.),
+                        Node("column_select_0", ColumnSelectNode(), 416., 300.),
+                        Node("column_select_1", ColumnSelectNode(), 415., 389.)
                     ],
                     initial_edges=[
-                        EdgeInstance("input_df", "Output", 'column_select_0', "DataFrame"),
-                        EdgeInstance("input_df", "Output", 'column_select_1', "DataFrame"),
-                        EdgeInstance('column_select_0', "Output", "output", "Input"),
-                        EdgeInstance('column_select_1', "Output", "output", "Input"),
-                        EdgeInstance('text_input', "Output", "output", "Title"),
+                        Edge("input_df", "Output", 'column_select_0', "DataFrame"),
+                        Edge("input_df", "Output", 'column_select_1', "DataFrame"),
+                        Edge('column_select_0', "Output", "output", "Input"),
+                        Edge('column_select_1', "Output", "output", "Input"),
+                        Edge('text_input', "Output", "output", "Title"),
                     ],
                   ),
         bokeh_plot,

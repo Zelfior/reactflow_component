@@ -3,11 +3,10 @@ from typing import Any, Dict, List
 
 import panel as pn
 
-from reactflow import ReactFlow
-from reactflow_api import NodePort, PortDirection, PortPosition, ReactFlowNode
+from panel_reactflow.workflow import Workflow, WorkflowNode
+from panel_reactflow.reactflow_api import NodePort, PortDirection, PortPosition
 
-
-class FloatInputNode(ReactFlowNode):
+class FloatInputNode(WorkflowNode):
     node_class_name = "Float Input"
     ports:List[NodePort] = [NodePort(direction=PortDirection.OUTPUT, position=PortPosition.RIGHT, name="output")]
 
@@ -30,7 +29,7 @@ class FloatInputNode(ReactFlowNode):
     def get_node_json_value(self) -> Dict[str, Any]:
         return {"value" : self.float_input.value}
 
-class ResultNode(ReactFlowNode):
+class ResultNode(WorkflowNode):
     node_class_name = "Result"
     ports:List[NodePort] = [NodePort(direction=PortDirection.INPUT, position=PortPosition.LEFT, name="input")]
 
@@ -63,7 +62,7 @@ class ResultNode(ReactFlowNode):
 
 
 def make_reactflow():
-    rf1 = ReactFlow(nodes_classes = [FloatInputNode, ResultNode],
+    rf1 = Workflow(nodes_classes = [FloatInputNode, ResultNode],
                     initial_nodes=[],
                     initial_edges=[])
 

@@ -1,14 +1,14 @@
 
 from pathlib import Path
-from typing import Any, Callable, Dict, List, NamedTuple, Type
+from typing import Any, Callable, Dict, List, NamedTuple, Type, Union
 import panel as pn
 
 from panel.custom import Child, Children, ReactComponent, ESMEvent
 import param
 
-from reactflow_api import NodeCreation, NodeDeletion, NodeChange, NodeMove, NodeSelected, NodeDeselected
-from reactflow_api import EdgeCreation, EdgeDeletion, EdgeSelected, EdgeDeselected, EdgeChange
-from reactflow_api import NodeCreation, ReactFlowNode, EdgeInstance, NodeInstance, NodePort, PortDirection, PortPosition
+from panel_reactflow.events import NodeCreation, NodeDeletion, NodeChange, NodeMove, NodeSelected, NodeDeselected
+from panel_reactflow.events import EdgeCreation, EdgeDeletion, EdgeSelected, EdgeDeselected, EdgeChange
+from panel_reactflow.reactflow_api import ReactFlowNode, Edge, Node
 # reactflow site : https://reactflow.dev/learn
 # reactflow github :https://github.com/xyflow/xyflow/tree/main/packages/react
 # reactflow custom component : https://reactflow.dev/learn/customization/custom-nodes
@@ -55,7 +55,7 @@ def make_css(node_name):
 
 
 
-class ReactFlow(ReactComponent):
+class ReactFlowGraph(ReactComponent):
 
     edges = param.List()
     """List of edges in the graph. Contains dictionnaries such as :
@@ -126,8 +126,8 @@ class ReactFlow(ReactComponent):
     def __init__(self, 
                     sizing_mode = "stretch_both", 
                     nodes_classes:List[Type[ReactFlowNode]] = [], 
-                    initial_nodes:List[NodeInstance] = [],
-                    initial_edges:List[EdgeInstance] = [],
+                    initial_nodes:List[Node] = [],
+                    initial_edges:List[Edge] = [],
                     display_side_bar:bool = True,
                     allow_edge_loops:bool = False,
                     **kwargs):
@@ -137,9 +137,9 @@ class ReactFlow(ReactComponent):
         ----------
         nodes_classes : List[Type[ReactFlowNode]], optional
             List of node classes that are present in the side bar, by default []
-        initial_nodes : List[NodeInstance], optional
+        initial_nodes : List[Node], optional
             List of nodes in the graph at its creation, by default []
-        initial_edges : List[EdgeInstance], optional
+        initial_edges : List[Edge], optional
             List of edges in the graph at its creation, by default []
         sizing_mode : str, optional
             Sizing mod of the Viewable, default at stretch_both to prevent the graph to be of zero size, by default "stretch_both"
@@ -161,20 +161,15 @@ class ReactFlow(ReactComponent):
         for node in initial_nodes:
             self.add_node(node)
 
-        # Creating the dictionnaries for ReactFlow from the NodeInstance list
+        # Creating the dictionnaries for ReactFlow from the Node list
         self.initial_nodes += [
                 str([
-                    {
-                        "id":node.name,
-                        "type":'panelWidget',
-                        "position":{"x":node.x,"y":node.y},
-                        "data":{"label":node.node.node_class_name}
-                    }
+                    node.to_reactflow()
                     for node in initial_nodes
                 ])
             ]
 
-        # Creating the dictionnaries for ReactFlow from the EdgeInstance list
+        # Creating the dictionnaries for ReactFlow from the Edge list
         self.initial_edges += [ 
                 str([
                     self._edge_to_string(edge)
@@ -186,21 +181,36 @@ class ReactFlow(ReactComponent):
         self.old_nodes = {}
         self.old_edges = {}
 
-        # Monitoring nodes and edges to trigger functions on graph change
-        self.param.watch(self.update_nodes, "nodes")
-        self.param.watch(self.update_nodes, "edges")
-
         self.edge_selection_callback = None
         """Function called when an edge is selected, can be set by calling set_on_edge_selection"""
         self.edge_deselection_callback = None
         """Function called when an edge is deselected, can be set by calling set_on_edge_deselection"""
 
-    def _edge_to_string(self, edge:EdgeInstance):
-        """Checks the EdgeInstance and prepares the dictionnary understood by reactflow
+        # Monitoring nodes and edges to trigger functions on graph change
+        self.param.watch(self.update_nodes, "nodes")
+        self.param.watch(self.update_nodes, "edges")
+
+        self._rf_event__callbacks:Dict[Union[Type[NodeChange], Type[EdgeChange]], List[Callable]] = {
+            NodeCreation : [],
+            NodeDeletion : [],
+            NodeChange : [],
+            NodeMove : [],
+            NodeSelected : [],
+            NodeDeselected : [],
+            EdgeCreation : [],
+            EdgeDeletion : [],
+            EdgeSelected : [],
+            EdgeDeselected : [],
+            EdgeChange : []
+        }
+        """Registered callbacks per event type"""
+
+    def _edge_to_string(self, edge:Edge):
+        """Checks the Edge and prepares the dictionnary understood by reactflow
 
         Parameters
         ----------
-        edge : EdgeInstance
+        edge : Edge
             Edge to add in the initial graph
 
         Returns
@@ -221,9 +231,9 @@ class ReactFlow(ReactComponent):
         target_node = [n for n in self.nodes_instances if n.name == edge.target]
 
         if len(source_node) ==0:
-            raise ValueError(f"Provided EdgeInstance starts from a node {edge.source} that was not provided in the NodeInstance list.")
+            raise ValueError(f"Provided Edge starts from a node {edge.source} that was not provided in the Node list.")
         if len(target_node) ==0:
-            raise ValueError(f"Provided EdgeInstance ends at a node {edge.target} that was not provided in the NodeInstance list.")
+            raise ValueError(f"Provided Edge ends at a node {edge.target} that was not provided in the Node list.")
         
         source_node = source_node[0]
         target_node = target_node[0]
@@ -232,9 +242,9 @@ class ReactFlow(ReactComponent):
         target_port = [p for p in target_node.ports if p.name == edge.target_handle]
 
         if len(source_port) ==0:
-            raise ValueError(f"Provided EdgeInstance starts from a port {edge.source_handle} at node {edge.source} that is not in the ports list.")
+            raise ValueError(f"Provided Edge starts from a port {edge.source_handle} at node {edge.source} that is not in the ports list.")
         if len(target_port) ==0:
-            raise ValueError(f"Provided EdgeInstance ends at a port {edge.target_handle} at node {edge.target} that is not in the ports list.")
+            raise ValueError(f"Provided Edge ends at a port {edge.target_handle} at node {edge.target} that is not in the ports list.")
         
         source_port = source_port[0]
         target_port = target_port[0]
@@ -291,7 +301,7 @@ class ReactFlow(ReactComponent):
 
                     node = c()
                     node.name = f"{node_id}"
-                    node_instance = NodeInstance(f"{node_id}", node, x, y)
+                    node_instance = Node(f"{node_id}", node, x, y)
                     self.add_node(node_instance)
                     
 
@@ -315,79 +325,12 @@ class ReactFlow(ReactComponent):
         self.nodes = [e for e in self.nodes]
         self.edges = [e for e in self.edges]
             
-    def update_nodes(self, _:param.parameterized.Event):
-        """Updates the nodes based on the noticed changes in the graph
-
-        Parameters
-        ----------
-        _ : param.parameterized.Event
-            Trigerring event
-        """
-        node_dict = {n["id"]: n for n in self.nodes}
-        edge_dict = {e["id"]: e for e in self.edges}
-
-        node_changes = self._check_node_change(node_dict)
-        edge_changes = self._check_edge_change(edge_dict)
-        
-        if len([nc for nc in node_changes if type(nc) in [NodeCreation, NodeDeletion]]) +\
-            len([ec for ec in edge_changes if type(ec) in [EdgeCreation, EdgeDeletion]]) > 0:
-            self._build_node_tree()
-
-            self.nodes_instances = [node for node in self.nodes_instances if node.name in list(n["id"] for n in self.nodes)]
-
-        for node_change in node_changes:
-            if isinstance(node_change, NodeCreation):
-                self.nodes_instances[self.item_names.index(node_change.node_name)].update(None)
-            elif isinstance(node_change, NodeMove):
-                self.nodes_instances[self.item_names.index(node_change.node_name)].on_node_move(node_change)
-            elif isinstance(node_change, NodeSelected):
-                self.nodes_instances[self.item_names.index(node_change.node_name)].on_node_selected()
-            elif isinstance(node_change, NodeDeselected):
-                self.nodes_instances[self.item_names.index(node_change.node_name)].on_node_deselected()
-
-        for edge_change in edge_changes:
-            if isinstance(edge_change, EdgeCreation):
-                self.nodes_instances[self.item_names.index(edge_change.target)].update(None)
-            elif isinstance(edge_change, EdgeDeletion):
-                # Checking the node wasn't removed from the list (node deletion triggers an edge deletion)
-                if edge_change.target in self.item_names:
-                    self.nodes_instances[self.item_names.index(edge_change.target)].update(None)
-            elif isinstance(edge_change, EdgeSelected):
-                if self.edge_selection_callback is not None:
-                    self.edge_selection_callback(edge_change)
-            elif isinstance(edge_change, EdgeDeselected):
-                if self.edge_deselection_callback is not None:
-                    self.edge_deselection_callback(edge_change)
-
-        # Storing the current node and edge state for next call
-        self.old_nodes = node_dict
-        self.old_edges = edge_dict
-         
-    def _build_node_tree(self,):
-        """Provides to the nodes who is plugged to them for the nodes updates
-        """
-        # Removing edges of the nodes that could have been removed in the event triggering the node tree building
-        self.edges = [e for e in self.edges if e["source"] in self.item_names and e["target"] in self.item_names]
-
-        for node in self.nodes_instances:
-            node.plugged_nodes = {port.name : [] for port in node.ports}
-
-        for edge in self.edges:
-            source_node = [node for node in self.nodes_instances if node.name == edge["source"]][0]
-            target_node = [node for node in self.nodes_instances if node.name == edge["target"]][0]
-
-            source_port_name = edge["sourceHandle"]
-            target_port_name = edge["targetHandle"]
-
-            source_node.plugged_nodes[source_port_name].append(target_node)
-            target_node.plugged_nodes[target_port_name].append(source_node)
-
-    def add_node(self, node:NodeInstance):
+    def add_node(self, node:Node):
         """Adds a node to the graph and stores the informations of a nodes in the class attributes
 
         Parameters
         ----------
-        node : NodeInstance
+        node : Node
             Node to store
         """
         node.node.name = node.name
@@ -439,12 +382,12 @@ class ReactFlow(ReactComponent):
             self.item_names.pop(node_index)
             self.item_ports.pop(node_index)
 
-    def add_edges(self, edges:List[EdgeInstance]):
+    def add_edges(self, edges:List[Edge]):
         """Adds edges to the graph
 
         Parameters
         ----------
-        edges : List[EdgeInstance]
+        edges : List[Edge]
             Added edges
         """
         for edge in edges:
@@ -480,12 +423,12 @@ class ReactFlow(ReactComponent):
                                             ]
                                          })
 
-    def remove_edges(self, edges:List[EdgeInstance]):
+    def remove_edges(self, edges:List[Edge]):
         """Removes the given edges from the graph
 
         Parameters
         ----------
-        nodes : List[EdgeInstance]
+        nodes : List[Edge]
             List of edges to remove
         """
         for edge in edges:
@@ -508,7 +451,7 @@ class ReactFlow(ReactComponent):
     def clear(self,):
         """Clears the node graph.
         """
-        self.remove_edges([EdgeInstance(
+        self.remove_edges([Edge(
                                 e["source"],
                                 e["sourceHandle"],
                                 e["target"],
@@ -594,43 +537,67 @@ class ReactFlow(ReactComponent):
         
         return edge_changes
     
-    def get_nodes(self,) -> List[NodeInstance]:
+    def get_nodes(self,) -> List[Node]:
         """Returns the nodes list
 
         Returns
         -------
-        List[NodeInstance]
+        List[Node]
             Current nodes list
         """
         return list(self.nodes_instances)
         
-    def get_edges(self,) -> List[EdgeInstance]:
+    def get_edges(self,) -> List[Edge]:
         """Returns the nodes list
 
         Returns
         -------
-        List[NodeInstance]
+        List[Node]
             Current nodes list
         """
-        return [EdgeInstance(e["source"], e["sourceHandle"], e["target"], e["targetHandle"]) for e in self.edges]
+        return [Edge(e["source"], e["sourceHandle"], e["target"], e["targetHandle"]) for e in self.edges]
         
-    def set_on_edge_selection(self, callback:Callable):
-        """Sets the function called when an edge is selected
+    def on_event(self, event:Union[Type[NodeChange], Type[EdgeChange]], callback:Callable):
+        """Registering a callback for the provided event type
 
         Parameters
         ----------
+        event : Union[Type[NodeChange], Type[EdgeChange]]
+            event type
         callback : Callable
-            Function called
+            function to call (takes the NodeChange/EdgeChange as argument)
         """
-        self.edge_selection_callback = callback
-        
-        
-    def set_on_edge_deselection(self, callback:Callable):
-        """Sets the function called when an edge is deselected
+        if issubclass(event, NodeChange) or issubclass(event, EdgeChange):
+            self._rf_event__callbacks[event].append(callback)
+
+        else:
+            super().on_event(event, callback)
+
+            
+    def update_nodes(self, _:param.parameterized.Event):
+        """Updates the nodes based on the noticed changes in the graph
 
         Parameters
         ----------
-        callback : Callable
-            Function called
+        _ : param.parameterized.Event
+            Trigerring event
         """
-        self.edge_deselection_callback = callback
+        node_dict = {n["id"]: n for n in self.nodes}
+        edge_dict = {e["id"]: e for e in self.edges}
+
+        node_changes = self._check_node_change(node_dict)
+        edge_changes = self._check_edge_change(edge_dict)
+        
+        # Calling every registered callbacks
+        for node_change in node_changes:
+            for callback in self._rf_event__callbacks[node_change.__class__]:
+                callback(node_change)
+                
+        for edge_change in edge_changes:
+            for callback in self._rf_event__callbacks[edge_change.__class__]:
+                callback(edge_change)
+                
+        # Storing the current node and edge state for next call
+        self.old_nodes = node_dict
+        self.old_edges = edge_dict
+         

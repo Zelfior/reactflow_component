@@ -339,19 +339,19 @@ const DnDFlow = () => {
     const [py_edges, py_setEdges] = model.useState('edges');
 
     const [py_initial_nodes,] = model.useState('initial_nodes');
+    const [py_initial_edges,] = model.useState('initial_edges');
+
+    const [allowEdgeLoops,] = model.useState("allow_edge_loops");
+    const [displaySidebar,] = model.useState("display_side_bar");
+
     const parsed_initial_nodes = JSON.parse(py_initial_nodes.toString()
         .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":')  // fix keys
         .replace(/'/g, '"') // convert single to double quotes);
     );
-
-    const [py_initial_edges,] = model.useState('initial_edges');
     const parsed_initial_edges = JSON.parse(py_initial_edges.toString()
         .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":')  // fix keys
         .replace(/'/g, '"') // convert single to double quotes);
     );
-
-    const [allowEdgeLoops,] = model.useState("allow_edge_loops");
-    const [displaySidebar,] = model.useState("display_side_bar");
 
     const [nodes, setNodes, onNodesChange] = useNodesState(parsed_initial_nodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(parsed_initial_edges);
@@ -410,7 +410,6 @@ const DnDFlow = () => {
             changes.forEach((change) => {
                 if (Object.hasOwn(change, 'item')) {
                     new_nodes.push(change.item);
-                    console.log(change.item.data);
                 }
             });
             if (new_nodes.length !== 0) {

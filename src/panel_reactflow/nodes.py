@@ -9,9 +9,10 @@ from typing import List
 import numpy as np
 import panel as pn
 
-from reactflow_api import NodePort, PortDirection, PortPosition, ReactFlowNode
+from panel_reactflow.reactflow_api import NodePort, PortDirection, PortPosition
+from panel_reactflow.workflow import WorkflowNode
 
-class ArrayInputNode(ReactFlowNode):
+class ArrayInputNode(WorkflowNode):
     """ Generic node containig an ArrayInput widget, provided text is given with the "value" key.
     """
     node_class_name = "Array Input"
@@ -56,7 +57,7 @@ class ArrayInputNode(ReactFlowNode):
         return {"value" : self.array_input.value}
 
 
-class ButtonNode(ReactFlowNode):
+class ButtonNode(WorkflowNode):
     """ Node containing a button that triggers an update.
     """
     node_class_name = "Button"
@@ -102,7 +103,7 @@ class ButtonNode(ReactFlowNode):
 
 
 
-class CheckBoxNode(ReactFlowNode):
+class CheckBoxNode(WorkflowNode):
     """ Generic node containig a text input widget, provided text is given with the "value" key.
     """
     node_class_name = "Check Box"
@@ -148,7 +149,7 @@ class CheckBoxNode(ReactFlowNode):
 
 
 
-class ColorPickerNode(ReactFlowNode):
+class ColorPickerNode(WorkflowNode):
     """ Generic node containig a color picker widget, provided color is given as HTML string with the "value" key.
     """
     node_class_name = "Color Picker"
@@ -194,7 +195,7 @@ class ColorPickerNode(ReactFlowNode):
 
 
 
-class DatePickerNode(ReactFlowNode):
+class DatePickerNode(WorkflowNode):
     """ Generic node containig a date picker widget, provided date is given with the "value" key.
     """
     node_class_name = "Date Picker"
@@ -240,7 +241,7 @@ class DatePickerNode(ReactFlowNode):
 
 
 
-class DateRangePickerNode(ReactFlowNode):
+class DateRangePickerNode(WorkflowNode):
     """ Generic node containig a date range picker widget, provided date range is given with the "value" key.
     """
     node_class_name = "Date Range Picker"
@@ -286,7 +287,7 @@ class DateRangePickerNode(ReactFlowNode):
 
 
 
-class FileInputNode(ReactFlowNode):
+class FileInputNode(WorkflowNode):
     """ Generic node containig a file input widget, provided data is given with the "value" key.
     """
     node_class_name = "File Input"
@@ -332,7 +333,7 @@ class FileInputNode(ReactFlowNode):
 
 
 
-class FloatInputNode(ReactFlowNode):
+class FloatInputNode(WorkflowNode):
     """ Generic node containig a float input widget, provided float is given with the "value" key.
     """
     node_class_name = "Float Input"
@@ -378,7 +379,7 @@ class FloatInputNode(ReactFlowNode):
 
 
 
-class IntInputNode(ReactFlowNode):
+class IntInputNode(WorkflowNode):
     """ Generic node containig a int input widget, provided integer is given with the "value" key.
     """
     node_class_name = "Int Input"
@@ -424,7 +425,7 @@ class IntInputNode(ReactFlowNode):
 
 
 
-class SelectNode(ReactFlowNode):
+class SelectNode(WorkflowNode):
     """ Generic node containig a select widget, provided chosent item is given with the "value" key. The options are expected from a single connection under the "value" label.
     """
     node_class_name = "Select"
@@ -492,7 +493,7 @@ class SelectNode(ReactFlowNode):
 
 
 
-class MultiChoiceNode(ReactFlowNode):
+class MultiChoiceNode(WorkflowNode):
     """ Generic node containig a multi select widget, provided chosent item is given with the "value" key. The options are expected from a single connection under the "value" label.
     """
     node_class_name = "Multi Choice"
@@ -560,7 +561,7 @@ class MultiChoiceNode(ReactFlowNode):
 
 
 
-class TextInputNode(ReactFlowNode):
+class TextInputNode(WorkflowNode):
     """ Generic node containig a text input widget, provided text is given with the "value" key.
     """
     node_class_name = "Text Input"
@@ -621,7 +622,7 @@ class JSONEncoderToString(JSONEncoder):
             return [e.isoformat() for e in obj]
         return json.JSONEncoder.default(self, obj)
 
-class PrintInputNode(ReactFlowNode):
+class PrintInputNode(WorkflowNode):
     """ Node displaying in a JSON pane the provided inputs.
     """
     node_class_name = "Print Input"
