@@ -74,14 +74,12 @@ class ReactFlowNode:
     """Node class name, as it will appear in the reactflow side bar."""
     ports:List[NodePort]
     """List of node ports"""
-    plugged_nodes:Dict[str, List['ReactFlowNode']]
-    """List of currently plugged ports, automatically updated by the ReactFlow class"""
     name:str
 
     def __init__(self,):
         """ ReactflowNode constructor used to instanciate the plugged_nodes dictionnary. It is necessary to call it in nodes constructors.
         """
-        self.plugged_nodes = {}
+        pass
 
     def create(self, ) -> pn.viewable.Viewable:
         """Function called by the Reactflow class to instanciate the content of the node

@@ -8,13 +8,10 @@ import param
 
 from panel_reactflow.events import NodeCreation, NodeDeletion, NodeChange, NodeMove, NodeSelected, NodeDeselected
 from panel_reactflow.events import EdgeCreation, EdgeDeletion, EdgeSelected, EdgeDeselected, EdgeChange
-from panel_reactflow.reactflow_api import ReactFlowNode, Edge, Node
+from panel_reactflow.api import ReactFlowNode, Edge, Node
 # reactflow site : https://reactflow.dev/learn
 # reactflow github :https://github.com/xyflow/xyflow/tree/main/packages/react
-# reactflow custom component : https://reactflow.dev/learn/customization/custom-nodes
 # tutorials : https://reactflow.dev/examples/
-
-# confetti example : https://panel.holoviz.org/reference/custom_components/ReactComponent.html#dependency-imports
 
 # /* esm.sh - reactflow@11.11.4 */
 # import "/@reactflow/background@11.3.14/es2022/background.mjs";

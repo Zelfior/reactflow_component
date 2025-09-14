@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 import panel as pn
 
 from panel_reactflow.workflow import Workflow, WorkflowNode
-from panel_reactflow.reactflow_api import NodePort, PortDirection, PortPosition
+from panel_reactflow.api import NodePort, PortDirection, PortPosition
 
 class FloatInputNode(WorkflowNode):
     node_class_name = "Float Input"
@@ -68,5 +68,4 @@ def make_reactflow():
 
     return rf1
 
-rf = make_reactflow()
-pn.Column(rf).show()
+make_reactflow().show()

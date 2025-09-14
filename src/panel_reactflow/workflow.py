@@ -7,7 +7,7 @@ import param
 from panel_reactflow.reactflow import ReactFlowGraph
 from panel_reactflow.events import NodeCreation, NodeDeletion, NodeMove, NodeSelected, NodeDeselected
 from panel_reactflow.events import EdgeCreation, EdgeDeletion, EdgeSelected, EdgeDeselected
-from panel_reactflow.reactflow_api import ReactFlowNode, Edge, Node, NodePort, PortDirection
+from panel_reactflow.api import ReactFlowNode, Edge, Node, NodePort, PortDirection
 
 class WorkflowNode:
     node_class_name = ""

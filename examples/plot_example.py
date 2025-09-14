@@ -9,8 +9,8 @@ from bokeh.plotting import figure
 from bokeh.io import curdoc
 
 from panel_reactflow.workflow import Workflow, WorkflowNode
-from panel_reactflow.reactflow_api import PortRestriction
-from panel_reactflow.reactflow_api import NodePort, PortDirection, PortPosition, Edge, Node
+from panel_reactflow.api import PortRestriction
+from panel_reactflow.api import NodePort, PortDirection, PortPosition, Edge, Node
 
 """
     Creating objects used by default by the nodes

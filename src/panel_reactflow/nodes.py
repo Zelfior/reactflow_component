@@ -9,7 +9,7 @@ from typing import List
 import numpy as np
 import panel as pn
 
-from panel_reactflow.reactflow_api import NodePort, PortDirection, PortPosition
+from panel_reactflow.api import NodePort, PortDirection, PortPosition
 from panel_reactflow.workflow import WorkflowNode
 
 class ArrayInputNode(WorkflowNode):
