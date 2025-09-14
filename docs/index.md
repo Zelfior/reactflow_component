@@ -1,5 +1,7 @@
 #   Reactflow
 
+Note: make this the second paragraph.
+
 Reactflow is a node based editor that lets you build interactive node trees for various purposes such as workflows or objects customizations. It allows interactively adding/removing nodes, move nodes around and plug nodes to each others.
 
 https://reactflow.dev/
@@ -14,16 +16,24 @@ https://github.com/xyflow/xyflow/tree/main/packages/react
 
 ## panel-reactflow
 
-**panel-reactflow** allows you to build a node graph filled with holoviz panel components and provide a python API to dynamically interact with the graph.
+Note: make this the top paragraph, because this introduces the module.
+
+
+**panel-reactflow** allows you to build a node graph (link to definition) filled with holoviz panel components and provide a python API to dynamically interact with the graph.
+
+Node graphs are ... based on ... to visualize ... and achieve ... . For more information please refer to (link).
+
+React-Flow is based on [Panel](https://panel.holoviz.org) and ReactFlow (link to the ReactFlow paragraph). This document assumes familiarity with Panel.
 
 ![alt text](assets/plot_illustration.png "Example of node graph customizing a Bokeh plot")
 
 Two approaches are available in this module:
 
--   **ReactFlowGraph** : the node graph is seen from the outside, and can be interpreted by another code to have effects on the rest of the panel app;
--   **Workflow** : Nodes interact with each others through an update() cascade, transmitting data from one to another.
+-   **ReactFlowGraph** : the node graph is seen from the outside, and can be interpreted by another code ?? to have effects ?? on the rest of the panel app;
+  
+-   **Workflow** : Nodes interact with each other through a reactive pattern? / an update() cascade, transmitting data from one to another. And / or: where a change / update in one node can trigger a change in one or several other nodes.
 
-These two approaches serve different needs and can be selected based on the user goal.
+These two approaches serve different needs and can be selected based on the user goal. Note: maybe this sentence is superfluous?
 
 ##  Node graph
 
@@ -59,7 +69,7 @@ A set of WorkflowNodes is provided in `panel_reactflow.nodes` implementing the b
 
 ## Port definition
 
-Every node port is defined busing the ``NodePort`` class found in ``panel_reactflow.api``. The node port has the following properties:
+Every node port is defined by using the ``NodePort`` class found in ``panel_reactflow.api``. The node port has the following properties:
 
 -   ``direction`` (PortDirection) : Whether the port represents an input or an output
 -   ``position`` (PortPosition) : Location of the port around the node : BOTTOM, TOP, LEFT or RIGHT
@@ -73,7 +83,7 @@ A ``PortRestriction`` is a class defined by a name and a color. When set, the po
 
 ## Edge definition
 
-An edge makes a link between two node ports, creating a structure in the graph. An edge is defined by the names of the source and target node with their associated port names.
+An edge makes / defines? a link between two node ports, creating a structure in the graph. An edge is defined by the names of the source and target node with their associated port names.
 
 #   Use example
 
@@ -124,9 +134,9 @@ class FloatInputNode(WorkflowNode):
 ```
 
 
-The result node input node is defined by the code below. 
+The result node input node is defined by the code below. Note: The result node input node? Should this be: The result node is ... etc.?
 
--   The inputs sum is displayed in a  ``pn.pane.Markdown`` object that is created and stored as class attribute. 
+-   The inputs sum is displayed in a  ``pn.pane.Markdown`` object that is created and stored as a class attribute. 
 -   The node has one input port, which we decide to locate on the node left to be consistent with the float input node.
 -   The ``create`` function returns a column that centers the ``Markdown`` widget.
 -   In this case, the ``update`` function reads the list of nodes plugged at its ``input`` port:
@@ -179,7 +189,7 @@ def make_reactflow():
 make_reactflow().show()
 ```
 
-Once built, this example can provide the following graph:
+Once built, this example provides the following graph:
 
 ![alt text](assets/simple_graph.png "Simple example graph")
 
