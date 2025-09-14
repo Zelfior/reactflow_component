@@ -183,6 +183,20 @@ Once built, this example can provide the following graph:
 
 ![alt text](assets/simple_graph.png "Simple example graph")
 
+
+
+##   Provided examples
+
+The following examples are provided in the panel_reactflow github repository:
+
+**ReactFlowGraph**
+-   ``node_graph_editor.py`` : Panel embedding a ReactFlowGraph with buttons to add/remove nodes and display which is selected. 
+
+**Workflow**
+-   ``simple_example.py`` : example provided above.
+-   ``all_base_nodes.py`` : graph with panel input widget nodes.
+-   ``plot_example.py`` : example of node graph setting up a Bokeh plot. 
+
 #  Customizing the Reactflow JavaScript
 
 panel-reactflow implements a set of features such as maximum connection counts, connection restriction or the sidebar drag and drop. More features are presented in the Reactflow website with the associated source code: 
