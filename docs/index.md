@@ -1,20 +1,5 @@
-#   Reactflow
 
-Note: make this the second paragraph.
-
-Reactflow is a node based editor that lets you build interactive node trees for various purposes such as workflows or objects customizations. It allows interactively adding/removing nodes, move nodes around and plug nodes to each others.
-
-https://reactflow.dev/
-
-The official website provides a range of use cases to illustrate the possibilities.
-
-https://reactflow.dev/showcase
-
-The source code of the xyflow, used in this module can be found at this GitHub address:
-
-https://github.com/xyflow/xyflow/tree/main/packages/react
-
-## panel-reactflow
+# panel-reactflow
 
 Note: make this the top paragraph, because this introduces the module.
 
@@ -34,6 +19,21 @@ Two approaches are available in this module:
 -   **Workflow** : Nodes interact with each other through a reactive pattern? / an update() cascade, transmitting data from one to another. And / or: where a change / update in one node can trigger a change in one or several other nodes.
 
 These two approaches serve different needs and can be selected based on the user goal. Note: maybe this sentence is superfluous?
+
+##   Reactflow
+
+
+Reactflow is a node based editor that lets you build interactive node trees for various purposes such as workflows or objects customizations. It allows interactively adding/removing nodes, move nodes around and plug nodes to each others.
+
+https://reactflow.dev/
+
+The official website provides a range of use cases to illustrate the possibilities.
+
+https://reactflow.dev/showcase
+
+The source code of the xyflow, used in this module can be found at this GitHub address:
+
+https://github.com/xyflow/xyflow/tree/main/packages/react
 
 ##  Node graph
 
