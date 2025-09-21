@@ -1,4 +1,3 @@
-
 import panel as pn
 from typing import List
 
@@ -9,8 +8,15 @@ from bokeh.plotting import figure
 from bokeh.io import curdoc
 
 from panel_reactflow.workflow import Workflow, WorkflowNode
-from panel_reactflow.api import PortRestriction
-from panel_reactflow.api import NodePort, PortDirection, PortPosition, Edge, Node
+from panel_reactflow.api import (
+    PortRestriction,
+    NodePort,
+    PortDirection,
+    PortPosition,
+    Edge,
+    Node,
+)
+from panel_reactflow.nodes import ParentNode
 
 """
     Creating objects used by default by the nodes
@@ -20,13 +26,15 @@ p.line(x=[0], y=[0])
 
 pn.state.curdoc = curdoc()
 
-bokeh_plot = pn.pane.Bokeh(p, sizing_mode = "stretch_both" )
+bokeh_plot = pn.pane.Bokeh(p, sizing_mode="stretch_both")
 
-df = pd.DataFrame({
-    "sinus": [math.sin(t/10) for t in range(50)],
-    "cosinus": [math.cos(t/10) for t in range(50)],
-    "atan": [math.atan(t/10) for t in range(50)],
-})
+df = pd.DataFrame(
+    {
+        "sinus": [math.sin(t / 10) for t in range(50)],
+        "cosinus": [math.cos(t / 10) for t in range(50)],
+        "atan": [math.atan(t / 10) for t in range(50)],
+    }
+)
 
 string_restriction = PortRestriction("string", "#FF8D00")
 dataframe_restriction = PortRestriction("dataframe", "#4400FF")
@@ -35,120 +43,168 @@ column_restriction = PortRestriction("column", "#008035")
 """
     Nodes definition
 """
+
+
 class TextInputNode(WorkflowNode):
     node_class_name = "Text Input"
-    ports:List[NodePort] = [NodePort(direction=PortDirection.OUTPUT, position=PortPosition.BOTTOM, name="Output", restriction=string_restriction)]
+    ports: List[NodePort] = [
+        NodePort(
+            direction=PortDirection.OUTPUT,
+            position=PortPosition.BOTTOM,
+            name="Output",
+            restriction=string_restriction,
+        )
+    ]
 
-    def __init__(self, ):
+    def __init__(
+        self,
+    ):
         super().__init__()
         self.text_input = pn.widgets.TextInput(value="", width=100)
 
         self.text_input.param.watch(self.update, "value")
 
-    def create(self, ):
-        return pn.layout.Column(
-                                    self.text_input, 
-                                    name=self.name, 
-                                    align="center"
-                                )
-    
+    def create(
+        self,
+    ):
+        return pn.layout.Column(self.text_input, name=self.name, align="center")
+
     def update(self, _):
         self.update_outputs()
 
     def get_node_json_value(self):
-        return {"value" : self.text_input.value}
+        return {"value": self.text_input.value}
 
 
 class InputDataFrameNode(WorkflowNode):
     node_class_name = "Input DataFrame"
-    ports:List[NodePort] = [NodePort(direction=PortDirection.OUTPUT, 
-                                        position=PortPosition.RIGHT, 
-                                        name="Output", 
-                                        display_name=True, 
-                                        offset=35,
-                                        restriction=dataframe_restriction)]
+    ports: List[NodePort] = [
+        NodePort(
+            direction=PortDirection.OUTPUT,
+            position=PortPosition.RIGHT,
+            name="Output",
+            display_name=True,
+            offset=35,
+            restriction=dataframe_restriction,
+        )
+    ]
 
     def __init__(self):
         super().__init__()
         self.df = df
 
-    def create(self, ):
+    def create(
+        self,
+    ):
         return pn.layout.Column(
-                                    pn.pane.Markdown("Some pandas DataFrame"),
-                                    name=self.name, 
-                                    align="center"
-                                )
-    
+            pn.pane.Markdown("Some pandas DataFrame"), name=self.name, align="center"
+        )
+
     def update(self, _):
         print("Updating dataframe")
         self.update_outputs()
 
     def get_node_json_value(self):
-        return {"dataframe" : self.df}
+        return {"dataframe": self.df}
 
 
 class ColumnSelectNode(WorkflowNode):
     node_class_name = "Column select"
 
-    ports:List[NodePort] = [
-            NodePort(direction=PortDirection.INPUT, position=PortPosition.LEFT, name="DataFrame", offset=30, display_name=True, restriction=dataframe_restriction),
-            NodePort(direction=PortDirection.OUTPUT, position=PortPosition.RIGHT, name="Output", offset=30, display_name=True, restriction=column_restriction)
-        ]
+    ports: List[NodePort] = [
+        NodePort(
+            direction=PortDirection.INPUT,
+            position=PortPosition.LEFT,
+            name="DataFrame",
+            offset=30,
+            display_name=True,
+            restriction=dataframe_restriction,
+        ),
+        NodePort(
+            direction=PortDirection.OUTPUT,
+            position=PortPosition.RIGHT,
+            name="Output",
+            offset=30,
+            display_name=True,
+            restriction=column_restriction,
+        ),
+    ]
 
     def __init__(self):
         super().__init__()
         self.df_columns = pn.widgets.Select(options=[], width=100)
         self.column_value = pd.DataFrame()
-        
+
         self.df_columns.param.watch(self.update, "value")
 
-    def create(self, ):
-        return pn.layout.Column(
-                                    self.df_columns, 
-                                    name=self.name, 
-                                    align="center"
-                                )
-    
+    def create(
+        self,
+    ):
+        return pn.layout.Column(self.df_columns, name=self.name, align="center")
+
     def update(self, _):
         print("Updating selector")
-        
+
         if "DataFrame" in self.plugged_nodes:
             if len(self.plugged_nodes["DataFrame"]) == 0:
                 self.df_columns.options = []
                 self.column_value = []
             else:
-                self.df_columns.options = list(self.plugged_nodes["DataFrame"][0].get_node_json_value()["dataframe"].columns)
+                self.df_columns.options = list(
+                    self.plugged_nodes["DataFrame"][0]
+                    .get_node_json_value()["dataframe"]
+                    .columns
+                )
 
                 if self.df_columns.value in self.df_columns.options:
-                    self.column_value = list(self.plugged_nodes["DataFrame"][0].get_node_json_value()["dataframe"][self.df_columns.value])
+                    self.column_value = list(
+                        self.plugged_nodes["DataFrame"][0].get_node_json_value()[
+                            "dataframe"
+                        ][self.df_columns.value]
+                    )
         self.update_outputs()
 
     def get_node_json_value(self):
-        return {"value" : self.column_value, "name":self.df_columns.value}
-    
+        return {"value": self.column_value, "name": self.df_columns.value}
 
 
 class BokehPlotNode(WorkflowNode):
     node_class_name = "Bokeh plot"
-    ports:List[NodePort] = [
-            NodePort(direction=PortDirection.INPUT, position=PortPosition.LEFT, name="Title", offset=20, display_name=True, connection_count_limit=1, restriction=string_restriction),
-            NodePort(direction=PortDirection.INPUT, position=PortPosition.LEFT, name="Input", offset=40, display_name=True, restriction=column_restriction),
-        ]
+    ports: List[NodePort] = [
+        NodePort(
+            direction=PortDirection.INPUT,
+            position=PortPosition.LEFT,
+            name="Title",
+            offset=20,
+            display_name=True,
+            connection_count_limit=1,
+            restriction=string_restriction,
+        ),
+        NodePort(
+            direction=PortDirection.INPUT,
+            position=PortPosition.LEFT,
+            name="Input",
+            offset=40,
+            display_name=True,
+            restriction=column_restriction,
+        ),
+    ]
 
     def __init__(self):
         super().__init__()
-        self.plot:pn.pane.Bokeh = bokeh_plot
+        self.plot: pn.pane.Bokeh = bokeh_plot
         self.display_legend = pn.widgets.Checkbox(name="Display legend", value=True)
 
-    def create(self, ):
+    def create(
+        self,
+    ):
         return pn.layout.Column(
-                                    self.display_legend,
-                                    name=self.name, 
-                                    align="center",
-                                    margin=0
-                                )
-    
-    async def replace_figure(self,):
+            self.display_legend, name=self.name, align="center", margin=0
+        )
+
+    async def replace_figure(
+        self,
+    ):
         self.plot.object = self.figure
 
     def update(self, _):
@@ -156,15 +212,17 @@ class BokehPlotNode(WorkflowNode):
         self.figure = figure(width=500, height=500)
 
         for input_ in self.plugged_nodes["Input"]:
-            x=list(range(len(input_.get_node_json_value()["value"])))
-            y= list(input_.get_node_json_value()["value"])
+            x = list(range(len(input_.get_node_json_value()["value"])))
+            y = list(input_.get_node_json_value()["value"])
 
-            if self.display_legend.value and\
-                  "name" in input_.get_node_json_value() and\
-                  isinstance(input_.get_node_json_value()["name"], str):
+            if (
+                self.display_legend.value
+                and "name" in input_.get_node_json_value()
+                and isinstance(input_.get_node_json_value()["name"], str)
+            ):
                 label = input_.get_node_json_value()["name"]
 
-                self.figure.line(x=x, y=y, legend_label = label)
+                self.figure.line(x=x, y=y, legend_label=label)
             else:
                 self.figure.line(x=x, y=y)
 
@@ -181,28 +239,81 @@ class BokehPlotNode(WorkflowNode):
     def get_node_json_value(self):
         return {}
 
+
+parent_opts = {"parentId": "plot_area"}
 """
     Panel definition and display
 """
 pn.Row(
-        Workflow(
-                    nodes_classes = [TextInputNode, InputDataFrameNode, ColumnSelectNode, BokehPlotNode], 
-                    initial_nodes = [
-                        Node("output", BokehPlotNode(), 725., 291., react_props={"background":"gray"}),
-                        Node("text_input", TextInputNode(), 585., 172.),
-                        Node("input_df", InputDataFrameNode(), 100., 295.),
-                        Node("column_select_0", ColumnSelectNode(), 416., 300.),
-                        Node("column_select_1", ColumnSelectNode(), 415., 389.)
-                    ],
-                    initial_edges=[
-                        Edge("input_df", "Output", 'column_select_0', "DataFrame", react_props={"label":"DataFrame"}),
-                        Edge("input_df", "Output", 'column_select_1', "DataFrame", react_props={"label":"DataFrame"}),
-                        Edge('column_select_0', "Output", "output", "Input"),
-                        Edge('column_select_1', "Output", "output", "Input"),
-                        Edge('text_input', "Output", "output", "Title"),
-                    ],
-                    color_mode = "dark"
-                  ),
-        bokeh_plot,
-        sizing_mode = "stretch_both"
-    ).show()
+    Workflow(
+        nodes_classes=[
+            TextInputNode,
+            InputDataFrameNode,
+            ColumnSelectNode,
+            BokehPlotNode,
+        ],
+        initial_nodes=[
+            Node(
+                "plot_area",
+                ParentNode(),
+                0.0,
+                0.0,
+                react_props={
+                    "style": {
+                        "width": 700, 
+                        "height": 300,
+                        "backgroundColor": "rgba(200, 200, 200, 0.4)",
+                        "borderColor": "#414141",
+                    },
+                },
+                is_parent=True,
+            ),
+            Node(
+                "input_df", InputDataFrameNode(), 50, 100.0, react_props=parent_opts
+            ),
+            Node(
+                "column_select_0",
+                ColumnSelectNode(),
+                400.0,
+                50.0,
+                react_props=parent_opts,
+            ),
+            Node(
+                "column_select_1",
+                ColumnSelectNode(),
+                400.0,
+                150.0,
+                react_props=parent_opts,
+            ),
+            Node(
+                "output",
+                BokehPlotNode(),
+                900.0,
+                100.0,
+            ),
+            Node("text_input", TextInputNode(), 750.0, -50.0),
+        ],
+        initial_edges=[
+            Edge(
+                "input_df",
+                "Output",
+                "column_select_0",
+                "DataFrame",
+                react_props={"label": "DataFrame"},
+            ),
+            Edge(
+                "input_df",
+                "Output",
+                "column_select_1",
+                "DataFrame",
+                react_props={"label": "DataFrame"},
+            ),
+            Edge("column_select_0", "Output", "output", "Input"),
+            Edge("column_select_1", "Output", "output", "Input"),
+            Edge("text_input", "Output", "output", "Title"),
+        ],
+        color_mode="dark",
+    ),
+    bokeh_plot,
+    sizing_mode="stretch_both",
+).show()

@@ -668,3 +668,45 @@ class PrintInputNode(WorkflowNode):
         """
         return {}
 
+
+
+class ParentNode(WorkflowNode):
+    """ Generic node containig a text input widget, provided text is given with the "value" key.
+    """
+    node_class_name = "Parent"
+    """Node class name, as it will appear in the reactflow side bar."""
+    ports:List[NodePort] = []
+    """List of node ports"""
+
+    def __init__(self, ):
+        super().__init__()
+
+    def create(self, ):
+        """Function called by the Reactflow class to instanciate the content of the node
+        """
+        return pn.layout.Column(
+                                    name=self.name, 
+                                    align="center",
+                                    margin=0
+                                )
+    
+    def update(self, _):
+        """Update the node content based on the input ports.
+
+        Parameters
+        ----------
+        _ : Any
+            Event requesting the update
+        """
+        pass
+
+    def get_node_json_value(self):
+        """ Returns a dictionnary describing the node content, this dictionnary can be obtain by other nodes in their update call.
+        
+        Returns
+        ----------
+        Dict[str, Any]
+            Node properties
+        """
+        return {}
+

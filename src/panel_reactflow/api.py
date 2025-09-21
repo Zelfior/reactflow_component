@@ -94,7 +94,8 @@ class Node:
                     node:ReactFlowNode, 
                     x:float, 
                     y:float,
-                    react_props:dict = {}):
+                    react_props:dict = {},
+                    is_parent:bool=False):
         """Node that is created when opening the app
 
         Parameters
@@ -107,6 +108,10 @@ class Node:
             Horizontal position in graph
         y : float
             Vertical position in graph
+        react_props : dict, optional
+            Additional properties that will be passed to reactflow, by default {}
+        is_parent : bool, optional
+            Whether the node is a parent node or not, by default False
         """
         self.react_props=react_props
 
@@ -118,6 +123,8 @@ class Node:
         """Node X coordinate in the graph"""
         self.y = y
         """Node Y coordinate in the graph"""
+        self.is_parent = is_parent
+        """Whether the node is a parent node or not"""
 
     def to_reactflow(self, ) -> Dict[str, Union[str, Dict[str, Any]]]:
         """Convert self to reactflow dict
@@ -129,9 +136,9 @@ class Node:
         """
         return{
                     "id":self.name,
-                    "type":'panelWidget',
+                    "type":"group" if self.is_parent else 'panelWidget',
                     "position":{"x":self.x,"y":self.y},
-                    "data":{"label":self.node.node_class_name},
+                    "data":{"label":""  if self.is_parent else self.node.node_class_name},
                     **self.react_props,
                 }
     
