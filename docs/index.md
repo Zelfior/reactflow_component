@@ -1,4 +1,21 @@
-#   Reactflow
+
+# panel-reactflow
+
+**panel-reactflow** allows you to build a node graph (link to definition) filled with holoviz panel components and provide a python API to dynamically interact with the graph. Node graphs can be used to provide user a better view on workflows or no code programming.
+
+React-Flow is based on [Panel](https://panel.holoviz.org) and ReactFlow (link to the ReactFlow paragraph). This document assumes familiarity with Panel.
+
+![alt text](assets/plot_illustration.png "Example of node graph customizing a Bokeh plot")
+
+Two approaches are available in this module:
+
+-   **ReactFlowGraph** : the node graph is seen from the outside, and can be interpreted by another code to trigger callbacks on the panel app;
+  
+-   **Workflow** : Nodes contain values that will be passed to their children (other nodes plugged to its outputs). An update function will compute a node output based on its inputs and can trigger the children update.
+
+
+##   Reactflow
+
 
 Reactflow is a node based editor that lets you build interactive node trees for various purposes such as workflows or objects customizations. It allows interactively adding/removing nodes, move nodes around and plug nodes to each others.
 
@@ -11,19 +28,6 @@ https://reactflow.dev/showcase
 The source code of the xyflow, used in this module can be found at this GitHub address:
 
 https://github.com/xyflow/xyflow/tree/main/packages/react
-
-## panel-reactflow
-
-**panel-reactflow** allows you to build a node graph filled with holoviz panel components and provide a python API to dynamically interact with the graph.
-
-![alt text](assets/plot_illustration.png "Example of node graph customizing a Bokeh plot")
-
-Two approaches are available in this module:
-
--   **ReactFlowGraph** : the node graph is seen from the outside, and can be interpreted by another code to have effects on the rest of the panel app;
--   **Workflow** : Nodes interact with each others through an update() cascade, transmitting data from one to another.
-
-These two approaches serve different needs and can be selected based on the user goal.
 
 ##  Node graph
 
@@ -59,7 +63,7 @@ A set of WorkflowNodes is provided in `panel_reactflow.nodes` implementing the b
 
 ## Port definition
 
-Every node port is defined busing the ``NodePort`` class found in ``panel_reactflow.api``. The node port has the following properties:
+Every node port is defined by using the ``NodePort`` class found in ``panel_reactflow.api``. The node port has the following properties:
 
 -   ``direction`` (PortDirection) : Whether the port represents an input or an output
 -   ``position`` (PortPosition) : Location of the port around the node : BOTTOM, TOP, LEFT or RIGHT
@@ -73,7 +77,7 @@ A ``PortRestriction`` is a class defined by a name and a color. When set, the po
 
 ## Edge definition
 
-An edge makes a link between two node ports, creating a structure in the graph. An edge is defined by the names of the source and target node with their associated port names.
+An edge defines a link between two node ports, creating a structure in the graph. An edge is defined by the names of the source and target node with their associated port names.
 
 #   Use example
 
@@ -124,9 +128,9 @@ class FloatInputNode(WorkflowNode):
 ```
 
 
-The result node input node is defined by the code below. 
+The result node is defined by the code below.
 
--   The inputs sum is displayed in a  ``pn.pane.Markdown`` object that is created and stored as class attribute. 
+-   The inputs sum is displayed in a  ``pn.pane.Markdown`` object that is created and stored as a class attribute. 
 -   The node has one input port, which we decide to locate on the node left to be consistent with the float input node.
 -   The ``create`` function returns a column that centers the ``Markdown`` widget.
 -   In this case, the ``update`` function reads the list of nodes plugged at its ``input`` port:
@@ -179,7 +183,7 @@ def make_reactflow():
 make_reactflow().show()
 ```
 
-Once built, this example can provide the following graph:
+Once built, this example provides the following graph:
 
 ![alt text](assets/simple_graph.png "Simple example graph")
 
@@ -197,10 +201,31 @@ The following examples are provided in the panel_reactflow github repository:
 -   ``all_base_nodes.py`` : graph with panel input widget nodes.
 -   ``plot_example.py`` : example of node graph setting up a Bokeh plot. 
 
-#  Customizing the Reactflow JavaScript
 
-panel-reactflow implements a set of features such as maximum connection counts, connection restriction or the sidebar drag and drop. More features are presented in the Reactflow website with the associated source code: 
+
+#   Further customization using the ReactFlow API
+
+panel-reactflow implements a set of features such as maximum connection counts, connection restriction or the sidebar drag and drop. More features are presented in the ReactFlow website with the associated source code: 
 
 https://reactflow.dev/examples
 
-panel-reactflow source code can be edited by users to implement these features as explained in the website examples.
+##  Nodes and edges customization
+
+Nodes and edges can see their styles edited as described in the examples. An attribute **react_props** receives a dictionary that will be provided to the ReactFlow React code. For example, to edit the node background and border colors, the following argument can be provided:
+
+```
+react_props={
+    "style": {
+        "backgroundColor": "rgba(200, 200, 200, 0.4)",
+        "borderColor": "#414141",
+    },
+},
+```
+
+The plot example provides a few examples of such implementation including node grouping as described in ReactFlow documentation:
+
+https://reactflow.dev/examples/grouping/sub-flows
+
+##  Customizing the ReactFlow JavaScript
+
+For deeper change in the graph behavior, the JavaScript file provided to the ReactFlow class must be edited by users to implement these features as explained in the website examples.
