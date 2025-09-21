@@ -201,10 +201,31 @@ The following examples are provided in the panel_reactflow github repository:
 -   ``all_base_nodes.py`` : graph with panel input widget nodes.
 -   ``plot_example.py`` : example of node graph setting up a Bokeh plot. 
 
-#  Customizing the Reactflow JavaScript
 
-panel-reactflow implements a set of features such as maximum connection counts, connection restriction or the sidebar drag and drop. More features are presented in the Reactflow website with the associated source code: 
+
+#   Further customization using the ReactFlow API
+
+panel-reactflow implements a set of features such as maximum connection counts, connection restriction or the sidebar drag and drop. More features are presented in the ReactFlow website with the associated source code: 
 
 https://reactflow.dev/examples
 
-panel-reactflow source code can be edited by users to implement these features as explained in the website examples.
+##  Nodes and edges customization
+
+Nodes and edges can see their styles edited as described in the examples. An attribute **react_props** receives a dictionary that will be provided to the ReactFlow React code. For example, to edit the node background and border colors, the following argument can be provided:
+
+```
+react_props={
+    "style": {
+        "backgroundColor": "rgba(200, 200, 200, 0.4)",
+        "borderColor": "#414141",
+    },
+},
+```
+
+The plot example provides a few examples of such implementation including node grouping as described in ReactFlow documentation:
+
+https://reactflow.dev/examples/grouping/sub-flows
+
+##  Customizing the ReactFlow JavaScript
+
+For deeper change in the graph behavior, the JavaScript file provided to the ReactFlow class must be edited by users to implement these features as explained in the website examples.
