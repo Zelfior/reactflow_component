@@ -87,11 +87,14 @@ class ReactFlowNode:
         raise NotImplementedError
     
 class Node:
+    react_props = {}
+    """Additional properties that will be passed to reactflow"""
     def __init__(self, 
                     name:str, 
                     node:ReactFlowNode, 
                     x:float, 
-                    y:float,):
+                    y:float,
+                    react_props:dict = {}):
         """Node that is created when opening the app
 
         Parameters
@@ -105,6 +108,8 @@ class Node:
         y : float
             Vertical position in graph
         """
+        self.react_props=react_props
+
         self.name = name
         """Node name"""
         self.node = node
@@ -126,15 +131,19 @@ class Node:
                     "id":self.name,
                     "type":'panelWidget',
                     "position":{"x":self.x,"y":self.y},
-                    "data":{"label":self.node.node_class_name}
+                    "data":{"label":self.node.node_class_name},
+                    **self.react_props,
                 }
     
 class Edge:
+    react_props = {}
+    """Additional properties that will be passed to reactflow"""
     def __init__(self, 
                     source:str, 
                     source_handle:str, 
                     target:str, 
-                    target_handle:str,):
+                    target_handle:str,
+                    react_props:dict = {}):
         """Edge that is created when opening the app
 
         Parameters
@@ -148,6 +157,8 @@ class Edge:
         target_handle : str
             Target port name
         """
+        self.react_props=react_props
+
         self.source = source
         """Node name from which the edge starts"""
         self.source_handle = source_handle

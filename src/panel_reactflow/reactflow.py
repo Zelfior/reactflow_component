@@ -37,6 +37,7 @@ def make_css(node_name):
   background-color: white;
 }
 
+
 }
 
 .react-flow__node-{node_name}.selectable:hover {
@@ -92,6 +93,8 @@ class ReactFlowGraph(ReactComponent):
     """Display the side bar to drag and drop new nodes."""
     allow_edge_loops = param.Boolean()
     """Allow to have edge loops in the graph (can lead to update infinite loops)."""
+    color_mode = param.ObjectSelector(default="light", objects=["light", "dark"])
+    """Color mode of the graph, can be light or dark."""
 
     nodes_classes: List[Type[ReactFlowNode]] = []
     """Provided nodes classes that are instanciated when a node is dragged from the sidebar."""
@@ -252,6 +255,7 @@ class ReactFlowGraph(ReactComponent):
             "target": edge.target,
             "targetHandle": edge.target_handle,
             "id": "_".join([edge.source, edge.source_handle, edge.target, edge.target_handle]),
+            **edge.react_props
         }
 
         if source_port.restriction is  None and target_port.restriction is not None:

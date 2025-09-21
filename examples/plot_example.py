@@ -188,20 +188,21 @@ pn.Row(
         Workflow(
                     nodes_classes = [TextInputNode, InputDataFrameNode, ColumnSelectNode, BokehPlotNode], 
                     initial_nodes = [
-                        Node("output", BokehPlotNode(), 725., 291.),
+                        Node("output", BokehPlotNode(), 725., 291., react_props={"background":"gray"}),
                         Node("text_input", TextInputNode(), 585., 172.),
-                        Node("input_df", InputDataFrameNode(), 158., 295.),
+                        Node("input_df", InputDataFrameNode(), 100., 295.),
                         Node("column_select_0", ColumnSelectNode(), 416., 300.),
                         Node("column_select_1", ColumnSelectNode(), 415., 389.)
                     ],
                     initial_edges=[
-                        Edge("input_df", "Output", 'column_select_0', "DataFrame"),
-                        Edge("input_df", "Output", 'column_select_1', "DataFrame"),
+                        Edge("input_df", "Output", 'column_select_0', "DataFrame", react_props={"label":"DataFrame"}),
+                        Edge("input_df", "Output", 'column_select_1', "DataFrame", react_props={"label":"DataFrame"}),
                         Edge('column_select_0', "Output", "output", "Input"),
                         Edge('column_select_1', "Output", "output", "Input"),
                         Edge('text_input', "Output", "output", "Title"),
                     ],
+                    color_mode = "dark"
                   ),
         bokeh_plot,
         sizing_mode = "stretch_both"
-    ).servable()
+    ).show()

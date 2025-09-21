@@ -31,6 +31,7 @@
     height: 10px; /* Desired gap above the first node */
 }
 
+/* Colors of the items in sidebar */
 .dndnode {
   padding: 10px;
   border-radius: 3px;

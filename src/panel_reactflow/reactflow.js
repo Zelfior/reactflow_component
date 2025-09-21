@@ -548,11 +548,14 @@ const DnDFlow = () => {
         [getNodes, getEdges],
     );
 
+    const colorMode = model.useState("color_mode")[0];
+    console.log("Color mode:", colorMode);
 
     return (
         <div className="dndflow" style={{ display: 'flex', width: '100%', height: '100%' }}>
             <div className="reactflow-wrapper" ref={reactFlowWrapper}>
                 <ReactFlow
+                    colorMode={colorMode}
                     nodes={nodes}
                     edges={edges}
                     onNodesChange={onNodesChangeHandler}
