@@ -1,12 +1,7 @@
 
 # panel-reactflow
 
-Note: make this the top paragraph, because this introduces the module.
-
-
-**panel-reactflow** allows you to build a node graph (link to definition) filled with holoviz panel components and provide a python API to dynamically interact with the graph.
-
-Node graphs are ... based on ... to visualize ... and achieve ... . For more information please refer to (link).
+**panel-reactflow** allows you to build a node graph (link to definition) filled with holoviz panel components and provide a python API to dynamically interact with the graph. Node graphs can be used to provide user a better view on workflows or no code programming.
 
 React-Flow is based on [Panel](https://panel.holoviz.org) and ReactFlow (link to the ReactFlow paragraph). This document assumes familiarity with Panel.
 
@@ -14,11 +9,10 @@ React-Flow is based on [Panel](https://panel.holoviz.org) and ReactFlow (link to
 
 Two approaches are available in this module:
 
--   **ReactFlowGraph** : the node graph is seen from the outside, and can be interpreted by another code ?? to have effects ?? on the rest of the panel app;
+-   **ReactFlowGraph** : the node graph is seen from the outside, and can be interpreted by another code to trigger callbacks on the panel app;
   
--   **Workflow** : Nodes interact with each other through a reactive pattern? / an update() cascade, transmitting data from one to another. And / or: where a change / update in one node can trigger a change in one or several other nodes.
+-   **Workflow** : Nodes contain values that will be passed to their children (other nodes plugged to its outputs). An update function will compute a node output based on its inputs and can trigger the children update.
 
-These two approaches serve different needs and can be selected based on the user goal. Note: maybe this sentence is superfluous?
 
 ##   Reactflow
 
@@ -83,7 +77,7 @@ A ``PortRestriction`` is a class defined by a name and a color. When set, the po
 
 ## Edge definition
 
-An edge makes / defines? a link between two node ports, creating a structure in the graph. An edge is defined by the names of the source and target node with their associated port names.
+An edge defines a link between two node ports, creating a structure in the graph. An edge is defined by the names of the source and target node with their associated port names.
 
 #   Use example
 
@@ -134,7 +128,7 @@ class FloatInputNode(WorkflowNode):
 ```
 
 
-The result node input node is defined by the code below. Note: The result node input node? Should this be: The result node is ... etc.?
+The result node is defined by the code below.
 
 -   The inputs sum is displayed in a  ``pn.pane.Markdown`` object that is created and stored as a class attribute. 
 -   The node has one input port, which we decide to locate on the node left to be consistent with the float input node.
