@@ -68,9 +68,9 @@ function Sidebar() {
     const [node_class_labels, setNodeClassLabels] = useModel().useState("node_class_labels");
 
     return (
-        <aside>
+        <aside className="node-palette">
             <div className="description">
-                {/* You can drag these nodes to the pane on the right. */}
+                {"Available drag and drop nodes"}
             </div>
             <div className="nodes-container">
                 {node_class_labels.map((label, index) => (
@@ -546,9 +546,10 @@ const DnDFlow = () => {
         [getNodes, getEdges],
     );
 
+
+    // Catching panel color mode value
     const colorModePy = model.useState("color_mode")[0];
     const [colorMode, setColorMode] = useState<ColorMode>(colorModePy);
-    // console.log("Color mode:", colorMode);
 
     useEffect(() => {
     setColorMode(colorModePy);

@@ -36,19 +36,33 @@
     max-width: 250px;
   }
 }
-
 .nodes-container {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center; /* Center the nodes horizontally */
-    gap: 10px; /* Separate the nodes by 10 pixels */
+    justify-content: center;
+    gap: 10px;
+    position: relative; /* Required for absolute positioning of the pseudo-element */
+    /* padding-left: 10px; Add some space for the line */
+    padding-top: 10px; /* Add some space for the line */
 }
 
-.nodes-container::before {
-    content: "";
-    width: 100%; /* Take the full width to force a line break */
-    height: 10px; /* Desired gap above the first node */
+
+.node-palette {
+    padding-left: 10px; 
+    padding-top: 10px; /* Add some space for the line */
+    position: relative;
 }
+
+.node-palette::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px; /* Width of the line */
+    background-color: var(--primary-color); /* Color of the line */
+}
+
 
 /* Colors of the items in sidebar */
 .dndnode {
@@ -56,12 +70,49 @@
   border-radius: 3px;
   min-width: 150px;
   font-size: 12px;
-  color: var(--primary-color);
+  color: var(--surface-color);
   text-align: center;
   justify-content: center; /* Center the nodes horizontally */
   border-width: 1px;
   border-style: solid;
   border-color: var(--xy-node-border, var(--xy-node-border-default));
-  background-color: var(--surface-color);
+  background-color: var(--primary-color);
   width: 80%; 
 }
+
+
+/* Updating controls and minimap to match with panel */
+.react-flow__controls-button {
+    background: var(--primary-color);
+    color: var(--surface-color);
+    border-bottom: 1px solid
+      var(--surface-color);
+  }
+
+
+  
+.react-flow__minimap {
+  background: var(--surface-color);
+}
+.react-flow__minimap-mask {
+    fill: color-mix(in srgb, var(--primary-color) 6%, var(--surface-color) 94%);;
+    /* stroke: var(
+      --xy-minimap-mask-stroke-color-props,
+      var(--xy-minimap-mask-stroke-color, var(--xy-minimap-mask-stroke-color-default))
+    );
+    stroke-width: var(
+      --xy-minimap-mask-stroke-width-props,
+      var(--xy-minimap-mask-stroke-width, var(--xy-minimap-mask-stroke-width-default))
+    ); */
+  }
+.react-flow__minimap-node {
+    fill: color-mix(in srgb, var(--primary-color) 15%, var(--surface-color) 85%);;
+    /* stroke: var(
+      --xy-minimap-node-stroke-color-props,
+      var(--xy-minimap-node-stroke-color, var(--xy-minimap-node-stroke-color-default))
+    );
+    stroke-width: var(
+      --xy-minimap-node-stroke-width-props,
+      var(--xy-minimap-node-stroke-width, var(--xy-minimap-node-stroke-width-default))
+    ); */
+  }

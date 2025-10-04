@@ -46,7 +46,7 @@ def make_css(node_name):
   border-width: 1px;
   border-style: solid;
   border-color: var(--xy-node-border, var(--xy-node-border-default));
-  background-color: var(--surface-color);
+  background-color: color-mix(in srgb, var(--primary-color) 10%, var(--surface-color) 90%);
 }
 .react-flow__node-{node_name}.selectable:hover {
       box-shadow: 0 1px 4px 1px rgba(0, 0, 0, 0.08);

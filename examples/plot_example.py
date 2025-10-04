@@ -7,6 +7,8 @@ import math
 from bokeh.plotting import figure
 from bokeh.io import curdoc
 
+import panel_material_ui as pmui
+
 from panel_reactflow.workflow import Workflow, WorkflowNode
 from panel_reactflow.api import (
     PortRestriction,
@@ -244,6 +246,9 @@ parent_opts = {"parentId": "plot_area"}
 """
     Panel definition and display
 """
+
+
+pmui.Page(main=[
 pn.Row(
     Workflow(
         nodes_classes=[
@@ -312,8 +317,7 @@ pn.Row(
             Edge("column_select_1", "Output", "output", "Input"),
             Edge("text_input", "Output", "output", "Title"),
         ],
-        color_mode="dark",
     ),
     bokeh_plot,
     sizing_mode="stretch_both",
-).show()
+)], page_type="secondary").show()
