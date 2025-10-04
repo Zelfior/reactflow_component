@@ -14,12 +14,10 @@ import {
     Handle,
     Position,
     useEdges,
+    Panel,
+    ColorMode,
 } from 'reactflow';
-import { useRef, useCallback, createContext, useContext, useState, useMemo, forwardRef, HTMLAttributes, memo, useEffect } from 'react';
-
-// import {
-//     useNodeConnections ,
-// } from 'reactflow';
+import { useRef, useCallback, createContext, useContext, useState, useMemo, forwardRef, HTMLAttributes, memo, useEffect, ChangeEventHandler } from 'react';
 
 // Create a context for the model
 const ModelContext = createContext(null);
@@ -548,8 +546,13 @@ const DnDFlow = () => {
         [getNodes, getEdges],
     );
 
-    const colorMode = model.useState("color_mode")[0];
-    console.log("Color mode:", colorMode);
+    const colorModePy = model.useState("color_mode")[0];
+    const [colorMode, setColorMode] = useState<ColorMode>(colorModePy);
+    // console.log("Color mode:", colorMode);
+
+    useEffect(() => {
+    setColorMode(colorModePy);
+    }, [colorModePy]); // Only re-run if colorModePy changes
 
     return (
         <div className="dndflow" style={{ display: 'flex', width: '100%', height: '100%' }}>
@@ -568,8 +571,8 @@ const DnDFlow = () => {
                     isValidConnection={isValidConnection}
                     fitView
                 >
-                    <Controls />
-                    <MiniMap />
+                    <Controls colorMode={colorMode} />
+                    <MiniMap colorMode={colorMode} />
                     <Background variant="dots" gap={12} size={1} />
                 </ReactFlow>
             </div>

@@ -2,6 +2,7 @@
 import functools
 from typing import List, Dict, Any
 import panel as pn
+import panel_material_ui as pmui
 
 from panel_reactflow.api import Edge, Node, PortDirection, PortPosition, NodePort, ReactFlowNode
 from panel_reactflow.events import EdgeSelected, EdgeDeselected, NodeSelected, NodeDeselected
@@ -68,13 +69,13 @@ class NodesEditor:
             else:
                 print("Select two nodes to add an edge")
         
-        self.add_node_button = pn.widgets.Button(name="Add node")
-        self.remove_node_button = pn.widgets.Button(name="Remove selected nodes")
+        self.add_node_button = pmui.Button(name="Add node")
+        self.remove_node_button = pmui.Button(name="Remove selected nodes")
         
-        self.add_edge_button = pn.widgets.Button(name="Add edge between nodes")
-        self.remove_edge_button = pn.widgets.Button(name="Remove selected edges")
+        self.add_edge_button = pmui.Button(name="Add edge between nodes")
+        self.remove_edge_button = pmui.Button(name="Remove selected edges")
         
-        self.clear_button = pn.widgets.Button(name="Clear graph")
+        self.clear_button = pmui.Button(name="Clear graph")
 
         self.add_node_button.on_click(add_new_node)
         self.remove_node_button.on_click(remove_selected_nodes)
@@ -130,4 +131,5 @@ class NodesEditor:
 
 
 ne = NodesEditor()
-ne.layout.show()
+
+pmui.Page(main=[ne.layout]).show()

@@ -23,23 +23,31 @@ from panel_reactflow.api import ReactFlowNode, Edge, Node
 # export * from "/reactflow@11.11.4/es2022/reactflow.mjs";
 # export { default } from "/reactflow@11.11.4/es2022/reactflow.mjs";
 
+#   padding: 10px;
+#   border-radius: 3px;
+#   min-width: 150px;
+#   font-size: 12px;
+#   color: var(--xy-node-color, var(--xy-node-color-default));
+#   text-align: center;
+#   border-width: 1px;
+#   border-style: solid;
+#   border-color: var(--xy-node-border, var(--xy-node-border-default));
+#   background-color: var(--xy-node-background-color, var(--xy-node-background-color-default));
+
 def make_css(node_name):
-    return """.react-flow__node-{node_name} {
+    return """
+.react-flow__node-{node_name} {
   padding: 10px;
   border-radius: 3px;
   min-width: 150px;
   font-size: 12px;
-  color: #222;
+  color: var(--primary-color);
   text-align: center;
   border-width: 1px;
   border-style: solid;
-  border-color: #1a192b;
-  background-color: white;
+  border-color: var(--xy-node-border, var(--xy-node-border-default));
+  background-color: var(--surface-color);
 }
-
-
-}
-
 .react-flow__node-{node_name}.selectable:hover {
       box-shadow: 0 1px 4px 1px rgba(0, 0, 0, 0.08);
 }
@@ -106,17 +114,17 @@ class ReactFlowGraph(ReactComponent):
 
     _importmap = {
         "imports": {
-            "reactflow": "https://esm.sh/reactflow@11.11.4", 
+            "reactflow": "https://esm.sh/@xyflow/react@12.8.3", 
         }
     }
     """Imports from the esm.sh website"""
     
     _stylesheets = [
-                        "https://unpkg.com/reactflow@11.11.4/dist/style.css",
+                        "https://unpkg.com/@xyflow/react@12.8.3/dist/style.css",
+                        Path(Path(__file__).parent / "dnd_flow.css"),
                         make_css("dndnode"),
                         make_css("input"),
                         make_css("panelWidget"),
-                        Path(Path(__file__).parent / "dnd_flow.css"),
                     ]
     """CSS elements to customize the graph appearance"""
     

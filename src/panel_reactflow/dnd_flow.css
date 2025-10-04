@@ -1,3 +1,22 @@
+
+:host {
+  --primary-color: var(--design-primary-color, var(--panel-primary-color));
+  --button-primary-text-color: var(
+    --design-primary-text-color,
+    var(--panel-on-primary-color)
+  );
+  --background-text-color: var(
+    --design-background-text-color,
+    var(--panel-on-background-color)
+  );
+  --surface-color: var(--design-surface-color, var(--panel-surface-color));
+  --surface-text-color: var(
+    --design-surface-text-color,
+    var(--panel-on-surface-color)
+  );
+}
+
+
 .dndflow .reactflow-wrapper {
   flex-grow: 1;
   height: 100%;
@@ -37,12 +56,12 @@
   border-radius: 3px;
   min-width: 150px;
   font-size: 12px;
-  color: #222;
+  color: var(--primary-color);
   text-align: center;
   justify-content: center; /* Center the nodes horizontally */
   border-width: 1px;
   border-style: solid;
-  border-color: #1a192b;
-  background-color: white;
+  border-color: var(--xy-node-border, var(--xy-node-border-default));
+  background-color: var(--surface-color);
   width: 80%; 
 }
