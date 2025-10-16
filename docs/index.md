@@ -41,17 +41,17 @@ Once created, the `ReactFlowGraph` being a `ReactComponent` can then be added to
 
 A node type as accepted by the ReactFlowGraph inherits from the `ReactFlowNode` class, its definition is found in `panel_reactflow.api`. A node type is defined by:
 
--   the `node_class_name` attributes provides the class name as appearing in the sidebar.
--   the `ports` attribute lists the ports of the node (dots on the node side that can be plugged to).
+-   the `node_class_name` attributes provides the class name as it appears in the sidebar.
+-   the `ports` attribute lists the ports of the node (represented visually by the dots on the node side that the ... can be plugged in to).
 -   the `create` function that returns the holoviz panel component that will be displayed in the node.
 -   the `name` attribute provides the node name, used to define links between nodes.
 
 A `WorkflowNode` is an extension of the `ReactFlowNode` with the following attribute and functions:
 
--   the `plugged_nodes` is filled by the `Workflow` instance and provides the node the other nodes plugged to it using a dictionary, allowing the nodes to communicate.
--   the `update` function is triggered when a graph change suggests the node needs to be updated (node creation, edge creation/removal). In this function, the developer implements what happens to a node when its inputs are updated. At the end of the `update` function, the `update_outputs` can be called to trigger the node children update.
--   the `get_node_json_value` function returns in a json like object what defines the node to its children. For example, a node that embed a FloatInput widget would be built to return the content of this widget in the dictionnary.
--   `on_node_move`, `on_node_selected`, and `on_node_deselected` are functions triggered when the event happens to the node. This features is redundant with using the `on_event` function on the node graph. 
+-   the `plugged_nodes` is filled by the `Workflow` instance and provides the node the other nodes plugged to it ? using a dictionary, allowing the nodes to communicate.
+-   the `update` function is triggered when a graph change suggests the node needs to be updated (node creation, edge creation/removal). In this function, the developer implements / defines? what happens to a node when its inputs are updated. At the end of the `update` function, the `update_outputs` can be called to trigger the node children update.
+-   the `get_node_json_value` function returns a json like object that defines the node to its children. For example, a node that embeds a FloatInput widget would be built to return the content of this widget in the dictionnary.
+-   `on_node_move`, `on_node_selected`, and `on_node_deselected` are functions triggered when the event happens to the node. This feature is redundant? synonymous /identical to? with using the `on_event` function on the node graph. 
 
 A set of WorkflowNodes is provided in `panel_reactflow.nodes` implementing the basic panel input widgets. They are all displayed in the example *all_base_nodes.py*:
 
@@ -77,7 +77,7 @@ An edge makes a link between two node ports, creating a structure in the graph. 
 
 #   Use example
 
-This section provides an example of how to build a workflow using the API. In this example, FloatInput based nodes can be plugged in output nodes, the output nodes will display the sum of the plugged float input nodes.
+This section provides an example of how to build a workflow using the API. In this example, FloatInput based nodes can be plugged in output nodes, and the output nodes will display the sum of the plugged float input nodes.
 
 First the necessary classes must be imported from the module:
 
@@ -92,9 +92,9 @@ from panel_reactflow.api import NodePort, PortDirection, PortPosition
 
 The float input node is defined by the code below. 
 
--   A ``pn.widgets.FloatInput`` object is created and stored as class attribute. If its value change, the ``update`` function is called. 
+-   A ``pn.widgets.FloatInput`` object is created and stored as class attribute. If its value changes, the ``update`` function is called. 
 -   In this case, the ``update`` function only needs to trigger its output nodes (nodes plugged to output ports).
--   The node has only one port, which is an output, which we decide to locate on the node right.
+-   The node has only one port, which is an output, which we decide to locate on right-hand side of the node right.
 -   The ``create`` function returns a column that centers the ``FloatInput`` widget.
 -   The node dictionary returned by ``get_node_json_value`` contains the ``FloatInput`` value that we set at the "value" key.
 
@@ -124,9 +124,9 @@ class FloatInputNode(WorkflowNode):
 ```
 
 
-The result node input node is defined by the code below. 
+The resulting input node is defined by the code below. 
 
--   The inputs sum is displayed in a  ``pn.pane.Markdown`` object that is created and stored as class attribute. 
+-   The sum of the inputs is displayed in a  ``pn.pane.Markdown`` object that is created and stored as class attribute. 
 -   The node has one input port, which we decide to locate on the node left to be consistent with the float input node.
 -   The ``create`` function returns a column that centers the ``Markdown`` widget.
 -   In this case, the ``update`` function reads the list of nodes plugged at its ``input`` port:
@@ -185,12 +185,12 @@ Once built, this example can provide the following graph:
 
 
 
-##   Provided examples
+##   Included examples
 
 The following examples are provided in the panel_reactflow github repository:
 
 **ReactFlowGraph**
--   ``node_graph_editor.py`` : Panel embedding a ReactFlowGraph with buttons to add/remove nodes and display which is selected. 
+-   ``node_graph_editor.py`` : Panel embedding a ReactFlowGraph with buttons to add/remove nodes and display which node / nodes? is / are selected. 
 
 **Workflow**
 -   ``simple_example.py`` : example provided above.
