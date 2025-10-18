@@ -5,7 +5,7 @@ import panel as pn
 import panel_material_ui as pmui
 
 from panel_reactflow.workflow import Workflow, WorkflowNode
-from panel_reactflow.api import NodePort, PortDirection, PortPosition
+from panel_reactflow.api import Edge, Node, NodePort, PortDirection, PortPosition
 
 class FloatInputNode(WorkflowNode):
     node_class_name = "Float Input"
@@ -63,9 +63,13 @@ class ResultNode(WorkflowNode):
 
 
 def make_reactflow():
+    node_1 = FloatInputNode()
+    node_2 = ResultNode()
+
     rf1 = Workflow(nodes_classes = [FloatInputNode, ResultNode],
-                    initial_nodes=[],
-                    initial_edges=[])
+                    initial_nodes=[Node("Node_1", node_1, 0, 0),
+                        Node("Node_2", node_2, 200, 0),],
+                    initial_edges=[Edge("Node_1", "output", "Node_2", "input")])
 
     return rf1
 

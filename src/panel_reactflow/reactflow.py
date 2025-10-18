@@ -63,6 +63,13 @@ def make_css(node_name):
 
 class ReactFlowGraph(ReactComponent):
 
+    display_side_bar = param.Boolean()
+    """Display the side bar to drag and drop new nodes."""
+    allow_edge_loops = param.Boolean()
+    """Allow to have edge loops in the graph (can lead to update infinite loops)."""
+    color_mode = param.ObjectSelector(default="light", objects=["light", "dark"])
+    """Color mode of the graph, can be light or dark."""
+    
     edges = param.List()
     """List of edges in the graph. Contains dictionnaries such as :
         ```
@@ -97,20 +104,9 @@ class ReactFlowGraph(ReactComponent):
     item_names = param.List()
     """List of node names, in the same order as items."""
     
-    display_side_bar = param.Boolean()
-    """Display the side bar to drag and drop new nodes."""
-    allow_edge_loops = param.Boolean()
-    """Allow to have edge loops in the graph (can lead to update infinite loops)."""
-    color_mode = param.ObjectSelector(default="light", objects=["light", "dark"])
-    """Color mode of the graph, can be light or dark."""
-
-    nodes_classes: List[Type[ReactFlowNode]] = []
-    """Provided nodes classes that are instanciated when a node is dragged from the sidebar."""
-    nodes_instances: List[ReactFlowNode] = []
-    """All node instance in the graph."""
-
     node_class_labels = param.List()
     """List of node class names as displayed in the sidebar."""
+
 
     _importmap = {
         "imports": {
@@ -157,9 +153,14 @@ class ReactFlowGraph(ReactComponent):
             Allow to have edge loops in the graph (can lead to update infinite loops), by default False
         """
         
+        
         super().__init__(sizing_mode=sizing_mode, **kwargs)
 
-        self.nodes_classes = nodes_classes
+        self.nodes_classes: List[Type[ReactFlowNode]] = nodes_classes
+        """Provided nodes classes that are instanciated when a node is dragged from the sidebar."""
+        self.nodes_instances: List[ReactFlowNode] = []
+        """All node instance in the graph."""
+
         self.node_class_labels = [c.node_class_name for c in self.nodes_classes]
 
         self.display_side_bar = display_side_bar 

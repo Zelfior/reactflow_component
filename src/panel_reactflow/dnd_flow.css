@@ -42,7 +42,6 @@
     justify-content: center;
     gap: 10px;
     position: relative; /* Required for absolute positioning of the pseudo-element */
-    /* padding-left: 10px; Add some space for the line */
     padding-top: 10px; /* Add some space for the line */
 }
 
@@ -95,24 +94,8 @@
   background: var(--surface-color);
 }
 .react-flow__minimap-mask {
-    fill: color-mix(in srgb, var(--primary-color) 6%, var(--surface-color) 94%);;
-    /* stroke: var(
-      --xy-minimap-mask-stroke-color-props,
-      var(--xy-minimap-mask-stroke-color, var(--xy-minimap-mask-stroke-color-default))
-    );
-    stroke-width: var(
-      --xy-minimap-mask-stroke-width-props,
-      var(--xy-minimap-mask-stroke-width, var(--xy-minimap-mask-stroke-width-default))
-    ); */
+    fill: color-mix(in srgb, var(--primary-color) 6%, var(--surface-color) 94%);
   }
 .react-flow__minimap-node {
-    fill: color-mix(in srgb, var(--primary-color) 15%, var(--surface-color) 85%);;
-    /* stroke: var(
-      --xy-minimap-node-stroke-color-props,
-      var(--xy-minimap-node-stroke-color, var(--xy-minimap-node-stroke-color-default))
-    );
-    stroke-width: var(
-      --xy-minimap-node-stroke-width-props,
-      var(--xy-minimap-node-stroke-width, var(--xy-minimap-node-stroke-width-default))
-    ); */
+    fill: color-mix(in srgb, var(--primary-color) 15%, var(--surface-color) 85%);
   }
