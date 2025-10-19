@@ -2,7 +2,6 @@
 from typing import Any, Dict, List
 
 import panel as pn
-import panel_material_ui as pmui
 
 from panel_reactflow.workflow import Workflow, WorkflowNode
 from panel_reactflow.api import Edge, Node, NodePort, PortDirection, PortPosition
@@ -73,4 +72,4 @@ def make_reactflow():
 
     return rf1
 
-pmui.Page(main=[make_reactflow()]).show()
+make_reactflow().show()
