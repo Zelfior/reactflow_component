@@ -376,6 +376,8 @@ class ReactFlowGraph(ReactComponent):
         nodes : List[str]
             List of nodes names to remove
         """
+        assert isinstance(nodes, list), "Nodes to remove should be provided as a list of node names."
+        
         for node in nodes:
             if not node in self.item_names:
                 raise ValueError(f"Node {node} deletion requested, node name unknown.")
