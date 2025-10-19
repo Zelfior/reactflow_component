@@ -53,7 +53,21 @@ A `WorkflowNode` is an extension of the `ReactFlowNode` with the following attri
 -   the `get_node_json_value` function returns a json like object that defines the node to its children. For example, a node that embeds a FloatInput widget would be built to return the content of this widget in the dictionnary.
 -   `on_node_move`, `on_node_selected`, and `on_node_deselected` are functions triggered when the event happens to the node. This feature is redundant? synonymous /identical to? with using the `on_event` function on the node graph. 
 
-A set of WorkflowNodes is provided in `panel_reactflow.nodes` implementing the basic panel input widgets. They are all displayed in the example *all_base_nodes.py*:
+A set of WorkflowNodes is provided in `panel_reactflow.nodes` implementing the basic panel input widgets. They are all displayed in the example *all_base_nodes.py*. By default, the following widgets are available in nodes:
+
+-  pn.widgets.ArrayInput
+-  pn.widgets.Button
+-  pn.widgets.Checkbox
+-  pn.widgets.ColorPicker
+-  pn.widgets.DatePicker
+-  pn.widgets.DateRangePicker
+-  pn.widgets.FileInput
+-  pn.widgets.FloatInput
+-  pn.widgets.IntInput
+-  pn.widgets.Select
+-  pn.widgets.MultiChoice
+-  pn.widgets.TextInput
+-  pn.pane.JSON
 
 ![alt text](assets/all_nodes.png "All nodes provided in panel_reactflow.nodes")
 
@@ -203,4 +217,7 @@ panel-reactflow implements a set of features such as maximum connection counts, 
 
 https://reactflow.dev/examples
 
-panel-reactflow source code can be edited by users to implement these features as explained in the website examples.
+In real life situations, the user will want to edit the javascript code to implement missing features or remove some. panel-reactflow source code (*reactflow.js*) can be edited by users to implement these features as explained in the website examples.
+
+An example of other use of reactflow through holoviz panel can be found here:
+-   https://github.com/evan54/panel_reactflow
