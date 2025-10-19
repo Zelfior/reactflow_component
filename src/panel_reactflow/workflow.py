@@ -133,7 +133,8 @@ class Workflow(ReactFlowGraph):
             len([ec for ec in edge_changes if type(ec) in [EdgeCreation, EdgeDeletion]]) > 0:
             self._build_node_tree()
 
-            self.nodes_instances = [node for node in self.nodes_instances if node.name in list(n["id"] for n in self.nodes)]
+            # Clearing nodes instances list from deleted nodes can lead to sync errors
+            # self.nodes_instances = [node for node in self.nodes_instances if node.name in list(n["id"] for n in self.nodes)]
 
         for node_change in node_changes:
             if isinstance(node_change, NodeCreation):
